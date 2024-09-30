@@ -82,7 +82,7 @@ Password spraying: A technique where an attacker tries a common / many password(
 3. **Privilege Escalation Techniques:**
    - Simulate post-authentication scenarios to elevate access privileges.
 
-### **StrEEEEEEEEEEtch Goals**
+### **Tertiary Goals**
 
 1. **Distributed Password Spraying:**
    - Implement distributed attacks across multiple devices (DDoS-style spraying).
