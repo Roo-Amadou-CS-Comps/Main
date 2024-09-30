@@ -155,7 +155,7 @@ Password spraying: A technique where an attacker tries a common / many password(
     - Decide on development tools and programming languages (e.g., Python for scripting).
 
 - **Weekend:**
-  - Set up project repository (Git) and initial documentation (README, project plan). --> DONE!
+  - Set up project repository (Git) and initial documentation (README, project plan).
 
 ### **Week 4 (Oct 7 - Oct 13): Server Setup and Initial Tool Development**
 
@@ -217,7 +217,7 @@ Password spraying: A technique where an attacker tries a common / many password(
   - **Mid-Project Review:**
     - Assess progress and adjust timelines or goals as necessary.
 
-### **Week 7 (Oct 28 - Nov 3): Security Analysis and AI/ML Integration (maybe?)**
+### **Week 7 (Oct 28 - Nov 3): Security Analysis and AI/ML Integration**
 
 - **Monday - Wednesday:**
   - **Roo:**
@@ -225,7 +225,7 @@ Password spraying: A technique where an attacker tries a common / many password(
     - Begin implementing AI/ML models for anomaly detection using server logs.
   - **Amadou:**
     - Implement logging and reporting features in the tool.
-    - Explore post-authentication strategies for privilege escalation (Amadou should look more into this).
+    - Explore post-authentication strategies for privilege escalation.
 
 - **Thursday - Friday:**
   - **Roo:**
@@ -238,7 +238,7 @@ Password spraying: A technique where an attacker tries a common / many password(
     - Integrate detection mechanisms with server security.
     - Test the effectiveness of AI/ML models.
 
-### **Week 8 (Nov 4 - Nov 10): Stretch Goals and Optimization**
+### **Week 8 (Nov 4 - Nov 10): Preliminary Presentation and Stretch Goals**
 
 - **Monday - Wednesday:**
   - **Amadou:**
@@ -248,52 +248,84 @@ Password spraying: A technique where an attacker tries a common / many password(
     - Enhance server defenses against distributed attacks.
     - Update AI/ML models to detect distributed patterns.
 
-- **Thursday - Friday:**
-  - **Amadou:**
-    - Implement advanced evasion techniques (e.g., encoding, stealth protocols).
-  - **Roo:**
-    - Test server responses and detection capabilities against advanced evasion.
+- **Thursday:**
+  - **Amadou and Roo:**
+    - Prepare the preliminary presentation slides.
+    - Compile progress and results achieved so far.
+    - Rehearse the presentation.
 
-- **Weekend:**
-  - **Joint Testing:**
-    - Evaluate the tool's performance and detection success rates.
-
-### **Week 9 (Nov 11 - Nov 17): Mitigation Strategies and Final Refinements**
-
-- **Monday - Wednesday:**
-  - **Roo:**
-    - Develop real-time mitigation tools (e.g., automated IP blocking).
-    - Document server configurations and security policies.
-  - **Amadou:**
-    - Optimize code for efficiency and low resource usage.
-    - Conduct stress testing and refine based on results.
-
-- **Thursday - Friday:**
-  - **Amadou:**
-    - Finalize all tool features and ensure stability.
-  - **Roo:**
-    - Prepare documentation on detection and mitigation strategies.
+- **Friday:**
+  - **Preliminary Presentation:**
+    - Deliver the preliminary presentation to peers and advisors.
+    - Collect feedback and suggestions.
 
 - **Weekend:**
   - **Joint Session:**
-    - Perform comprehensive testing of the tool and defenses.
+    - Reflect on feedback from the preliminary presentation.
+    - Adjust plans and prioritize tasks based on input received.
 
-### **Week 10 (Nov 18 - Nov 24): Documentation and Presentation Preparation**
+### **Week 9 (Nov 11 - Nov 17): Final Development and Final Presentation Preparation**
+
+- **Monday - Tuesday:**
+  - **Amadou:**
+    - Finalize all tool features and ensure stability.
+    - Optimize code for efficiency and low resource usage.
+  - **Roo:**
+    - Develop real-time mitigation tools (e.g., automated IP blocking).
+    - Document server configurations and security policies.
+
+- **Wednesday:**
+  - **Amadou and Roo:**
+    - Begin preparing the final presentation slides.
+    - Start compiling the final report and documentation.
+
+- **Thursday:**
+  - **Amadou and Roo:**
+    - Complete the final presentation slides.
+    - Prepare demonstration videos or live demo setups.
+    - Rehearse the presentation thoroughly.
+
+- **Friday (Nov 17):**
+  - **Final Presentation:**
+    - Deliver the final presentation to the evaluation committee.
+    - Engage in Q&A and note any final feedback.
+
+- **Weekend:**
+  - **Joint Session:**
+    - Incorporate feedback from the final presentation into the final report.
+    - Make any necessary adjustments to the project deliverables.
+
+### **Week 10 (Nov 18 - Nov 24): Final Documentation and Project Submission**
 
 - **Monday - Wednesday:**
   - **Amadou and Roo:**
-    - Compile all project documentation, including user guides and technical manuals.
-    - Prepare data analysis and graphs for the final report.
+    - Complete all project documentation, including user guides, technical manuals, and the final report.
+    - Prepare data analysis and graphs to support findings and conclusions.
 
 - **Thursday - Friday:**
   - **Amadou and Roo:**
-    - Develop the final presentation slides.
-    - Create demonstration videos or live demo setups.
+    - Review all deliverables for completeness and quality.
+    - Conduct a final code review and clean up any remaining issues.
+    - Ensure all documentation is clear, professional, and well-organized.
 
-- **Weekend:**
-  - **Final Review:**
-    - Rehearse the presentation.
-    - Ensure all project deliverables are complete and polished.
+- **Saturday (Nov 25):**
+  - **Project Submission:**
+    - Submit all final project deliverables by the deadline.
+    - Confirm receipt and address any last-minute requirements.
+
+
+- **Week 8 (Nov 4 - Nov 10):** Preliminary Presentation
+  - Showcase progress, initial findings, and demonstrate basic functionalities.
+  - Receive feedback to guide final development stages.
+
+- **Week 9 (Nov 11 - Nov 17):** Final Presentation
+  - Present the completed project, including demonstrations of the tool and defense mechanisms.
+  - Highlight analysis, results, and conclusions.
+
+- **November 25:** Final Project Submission
+  - Submit all deliverables, including code, documentation, and the final report.
+  - Ensure all project components meet or exceed expectations.
+
 
 ---
 
@@ -368,3 +400,8 @@ Password spraying: A technique where an attacker tries a common / many password(
 - **Time Constraints:**
   - **Risk:** Falling behind schedule due to unforeseen obstacles.
     - **Mitigation:** Regularly review progress and adjust the plan as needed. Also, we don't necessarily want to cover everything in this document. Most are longshot goals.
+   
+
+
+
+
