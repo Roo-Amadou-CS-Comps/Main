@@ -306,13 +306,12 @@ Password spraying: A technique where an attacker tries a common / many password(
 
 - **Amadou (Tool Developer and Attack Specialist):**
   - Designing and coding the password spraying tool.
-  - Implementing evasion and advanced attack techniques.
   - Exploring post-authentication privilege escalation methods.
   - Optimizing the tool for performance and stealth.
 
 - **Joint Task:**
   - Implementing AI/ML models for attack detection.
-
+  - Implementing evasion and advanced attack techniques.
 ---
 
 ## **Deliverables**
