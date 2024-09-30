@@ -302,7 +302,6 @@ Password spraying: A technique where an attacker tries a common / many password(
 - **Roo (Server Specialist and Security Analyst):**
   - Setting up and securing the server environment.
   - Configuring and managing SSH, HTTP, and RDP services.
-  - Implementing AI/ML models for attack detection.
   - Developing mitigation strategies and tools.
 
 - **Amadou (Tool Developer and Attack Specialist):**
@@ -310,6 +309,9 @@ Password spraying: A technique where an attacker tries a common / many password(
   - Implementing evasion and advanced attack techniques.
   - Exploring post-authentication privilege escalation methods.
   - Optimizing the tool for performance and stealth.
+
+- **Joint Task:**
+  - Implementing AI/ML models for attack detection.
 
 ---
 
@@ -336,7 +338,7 @@ Password spraying: A technique where an attacker tries a common / many password(
 5. **Presentation:**
    - Slide deck summarizing the project.
    - Demonstrations of the tool and security measures.
-   - Q&A preparation.
+   - Q&A preparation (poster presentation).
 
 ---
 
@@ -366,20 +368,4 @@ Password spraying: A technique where an attacker tries a common / many password(
 
 - **Time Constraints:**
   - **Risk:** Falling behind schedule due to unforeseen obstacles.
-    - **Mitigation:** Regularly review progress and adjust the plan as needed.
-
-- **Ethical and Legal Compliance:**
-  - **Risk:** Unintended violation of policies or laws.
-    - **Mitigation:** Ensure all testing is done in a controlled environment and obtain necessary permissions.
-
----
-
-## **Conclusion**
-
-By following this detailed plan, we aim to successfully implement a password spraying tool and thoroughly analyze its effectiveness against SSH and HTTP authentication systems. We will also explore detection and mitigation strategies, contributing valuable insights into cybersecurity practices.
-
----
-
-**Note:** This plan is flexible and may be adjusted as the project progresses. Regular communication and collaboration will be key to our success.
-
----
+    - **Mitigation:** Regularly review progress and adjust the plan as needed. Also, we don't necessarily want to cover everything in this document. Most are longshot goals.
