@@ -1,11 +1,11 @@
 
-# ARSpray - Password Spraying Tool
+# RASpray - Password Spraying Tool
 
 **Version**: 1.0.0
 
 ## Overview
 
-ARSpray is a simple password spraying tool designed to perform basic authentication attempts against a target IP using a provided list of usernames and passwords. The tool is built with Python and can be deployed on Unix-based systems.
+RASpray is a simple password spraying tool designed to perform basic authentication attempts against a target IP using a provided list of usernames and passwords. The tool is built with Python and can be deployed on Unix-based systems.
 
 Password spraying involves trying a list of common passwords against multiple user accounts to detect weak login credentials, while avoiding account lockouts that occur from multiple failed attempts on a single account.
 
@@ -30,27 +30,27 @@ pip install requests
 1. **Download the Script**:
    Clone or download the script and make it executable:
    ```bash
-   chmod +x arspray.py
+   chmod +x raspray.py
    ```
 
 2. **Move to Path (Optional)**:
    If you want to run it from any location, move the script to a directory in your PATH:
    ```bash
-   sudo mv arspray.py /usr/local/bin/arspray
+   sudo mv raspray.py /usr/local/bin/raspray
    ```
 
 ## Usage
 
-arspray can be run from the command line, passing in the required arguments for the usernames file, passwords file, and target IP address.
+raspray can be run from the command line, passing in the required arguments for the usernames file, passwords file, and target IP address.
 
 ### Basic Usage:
 ```bash
-arspray -u <usernames_file> -p <passwords_file> -i <ip_address>
+raspray -u <usernames_file> -p <passwords_file> -i <ip_address>
 ```
 
 ### Example:
 ```bash
-arspray -u usernames.txt -p passwords.txt -i 192.168.1.1
+raspray -u usernames.txt -p passwords.txt -i 192.168.1.1
 ```
 
 ### Options:
@@ -64,18 +64,18 @@ arspray -u usernames.txt -p passwords.txt -i 192.168.1.1
 ### Help Command:
 To display a list of available options, use:
 ```bash
-arspray --help
+raspray --help
 ```
 
 ### Version:
 To check the current version of the tool:
 ```bash
-arspray --version
+raspray --version
 ```
 
 ## Files
 
-- **`arspray.py`**: The main Python script for the password spraying tool.
+- **`raspray.py`**: The main Python script for the password spraying tool.
 - **`usernames.txt`**: A sample file containing usernames (each on a new line).
 - **`passwords.txt`**: A sample file containing passwords (each on a new line).
 
