@@ -3,8 +3,7 @@
 ======== AMADOU ========
 
 1. Look into https://httpd.apache.org/docs/2.4/programs/htpasswd.html
-2. Make a much better tool with the following options:
-    - Be able to traverse through a website and see whereever a password is asked for for every link / page accessed
-      return the username and passwords that cracked those pages.
-    - Set up tool such that it only attempts to crack password if it sees that it is being requested
-    - Let's first start implementation in python, then try C
+2. Let's first start implementation in python, then try C
+3. Implement some of the following features:
+  - Be able to actually include another 
+4. A good word list: https://github.com/danielmiessler/SecLists
