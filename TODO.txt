@@ -4,6 +4,11 @@
 
 1. Look into https://httpd.apache.org/docs/2.4/programs/htpasswd.html
 2. Let's first start implementation in python, then try C
-3. Implement some of the following features:
-  - Be able to actually include another 
-4. A good word list: https://github.com/danielmiessler/SecLists
+3. A good word list: https://github.com/danielmiessler/SecLists
+4. Print in red that no username / password combination was found for a page when the thing is exhausted
+5. Print in green the found username / password combination
+6. Differentiate between a basicauth / html / php login that simply gives access to the page, and one that actually gives access to another page
+   (context: we had a php login translated to HTML that effectively allowed a user to enter a wrong username and password combination;
+    however, RA Spray would consider that combination correct because after the failure the page would return a 200 response that simply
+    redirected to the actual page that's requesting the usernmae and password (giving you the chance to enter another combination), and not 
+    access to the page it was protecting. we need to fix that to consider both situations)

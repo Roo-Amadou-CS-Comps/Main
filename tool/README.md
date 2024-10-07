@@ -92,10 +92,8 @@ raspray --version
 
 ## Next Steps
 
-- Add logging capabilities to track attempts and results.
 - Implement delays between attempts to avoid detection and lockout.
 - Extend support for other authentication methods (e.g., RDP, SSH).
-- Improve the filtering system for usernames and passwords (e.g., allowing exclusion of certain characters).
 - Explore integration with machine learning to detect patterns in failed attempts.
 - Implement features Amadou and Roo have discussed, such as more complex traversal algorithms and additional protocols.
 
