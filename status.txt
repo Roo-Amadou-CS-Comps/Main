@@ -1,0 +1,13 @@
+Roo:
+
+- I have a website set up! It's just HTML and PHP, no CSS or anything fancy. The background is Apache2 and Nginx. 
+- There are two methods for getting in - one that uses basicauth built in to the browser, and one that uses a PHP script. 
+- There's some DOS protection, that is built in and enabled in Apache. I've done the config for that. 
+
+- My next big thing is containerizing it and then adding in login-attempt logging. After that, we're getting into benchmarking and improving the spraying tool
+- I like to think at least with the website, we're getting closer to minimum viable product. 
+
+________________
+
+Amadou:
+
