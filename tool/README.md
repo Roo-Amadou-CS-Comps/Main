@@ -106,6 +106,6 @@ This tool is provided for educational purposes and ethical hacking only. Ensure 
 ### Contributors
 
 - **Amadou Touré** '25, Carleton College. [tourea@carleton.edu](mailto:tourea@carleton.edu)
-- **Roo Case** '25, Carleton College. [croo@carleton.edu](mailto:croo@carleton.edu)
+- **Roo Case** '25, Carleton College. [caser@carleton.edu](mailto:caser@carleton.edu)
 
 ---
