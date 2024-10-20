@@ -127,13 +127,19 @@ def is_password_requested_basic_auth(url, session):
         if response.status_code == 401:
             print(f"{Fore.GREEN}BasicAuth required on {url}")
             return True
+        
         else:
             print(f"No BasicAuth required on {url}")
             return False
+        
+        failure_reason = extract_failure_reason(response.text)
+        print(f"{Fore.RED}Login failed for {username} on {full_url}. Reason: {failure_reason}")
+        return None
 
     except RequestException as e:
         print(f"Error checking {url}: {e}")
         return False
+    
 
     
     
@@ -353,6 +359,7 @@ def perform_bruteforce(username_file, password_file, ip_address, criteria, sessi
 
 # Modify the password_spraying function to include bruteforce and character substitution
 def password_spraying(ip_address, username_file, password_file, criteria):
+    time.sleep(2)
     successful_cracks = []
     failed_cracks = []
 
@@ -375,12 +382,14 @@ def password_spraying(ip_address, username_file, password_file, criteria):
     pages_to_check = traverse_website(base_url, session)
 
     for page in pages_to_check:
+        time.sleep(2)
         full_url = urljoin(base_url, page)
 
         # Check if the page has a password field (form-based authentication)
         if is_password_requested_basic_password_field(full_url, session):
             for password in passwords:
                 for username in usernames:
+                    time.sleep(2)
                     try:
                         print(f"{Fore.WHITE}Trying username: {username} and password: {password}")
                         credentials = attempt_login_with_form(full_url, session, username, password)
@@ -390,7 +399,7 @@ def password_spraying(ip_address, username_file, password_file, criteria):
                             successful_cracks.append((full_url, credentials[0], credentials[1]))
                         else:
                             failed_cracks.append((full_url, username, password))
-                        time.sleep(2)
+                        time.sleep(10)
                     except (Timeout, ConnectionError):
                         print(f"Connection failed for {full_url}")
                     except RequestException as e:
@@ -407,9 +416,9 @@ def password_spraying(ip_address, username_file, password_file, criteria):
                             print(f"{Fore.GREEN}Success! BasicAuth credentials: Username: {username}, Password: {password} on {full_url}")
                             successful_cracks.append((full_url, username, password))
                         else:
-                            print(f"{Fore.GREEN}Failed! Failed BasicAuth with credentials: Username: {username}, Password: {password} on {full_url}")
+                            print(f"{Fore.RED}Failed! Failed BasicAuth with credentials: Username: {username}, Password: {password} on {full_url}")
                             failed_cracks.append((full_url, username, password))
-                        time.sleep(2)
+                        time.sleep(10)
                     except (Timeout, ConnectionError):
                         print(f"Connection failed for {full_url}")
                     except RequestException as e:
