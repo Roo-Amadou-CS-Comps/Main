@@ -15,5 +15,4 @@ COPY www/html /var/www/html/
 EXPOSE 80
 
 # Start Apache in the foreground
-CMD ["apache2ctl", "-D", "FOREGROUND"]
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["apache2ctl", "-D", "FOREGROUND", "&&", "nginx", "-g", "daemon off;"]
