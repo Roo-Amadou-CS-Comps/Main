@@ -3,12 +3,13 @@
 FROM debian:latest
 
 # Install git and apache2
+# also installs apache2 extensions and PHP
 RUN apt-get update && \
     apt-get install -y git apache2 libapache2-mod-evasive php8.2 libapache2-mod-php8.2 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Clone your repository from GitHub
+# Clone repository from GitHub
 RUN git clone https://github.com/Roo-Amadou-CS-Comps/Main.git /app
 
 # Ensure the /etc/apache2 directory exists before copying
