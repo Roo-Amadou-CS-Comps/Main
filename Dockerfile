@@ -1,3 +1,4 @@
+# THIS DOCKERFILE IS FOR THE WEBSITE AND APACHE SERVER. 
 # Base image
 FROM debian:latest
 
