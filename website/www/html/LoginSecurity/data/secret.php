@@ -1,0 +1,34 @@
+
+<?php
+session_start();
+
+// Check if the user is logged in
+if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+    // Redirect to the login page if the user is not logged in
+    header('Location: ../login.php');
+    exit();
+}
+
+// If the user is logged in, show the secret content
+?>
+
+<!DOCTYPE html>
+<h1>Important Data SECURE ADMIN ONLY</h1>
+<h2>The most important</h2>
+<li>Here's the even more secret code to get access to the system: ILikeTurtlesandMooses</li>
+
+<h2>Other passwords</h2>
+<ul>
+    <li><strong>Fj82@#yKlX1$zGpQ</strong> - Internal financial reports for a major investment firm</li>
+    <li><strong>%P4mZ9^hQr7!vX3t</strong> - Access to encrypted client data in a cybersecurity firm</li>
+    <li><strong>$n5Rg8&*wVt@2hXj</strong> - Secure database of sensitive government contracts</li>
+    <li><strong>Lz!3Qp7#Fj1$Xk@8</strong> - High-level project documents for a pharmaceutical company</li>
+    <li><strong>8Rt^#zK2&f4!Yw9$</strong> - Proprietary algorithms for an AI development lab</li>
+    <li><strong>B7^mG2%t$Xq9@L8z</strong> - Patient records and research data for a medical institution</li>
+    <li><strong>W3y@1!Ns8^zLp4&X</strong> - Sensitive diplomatic communications within a government agency</li>
+    <li><strong>V2#mQ9$kR5^hJ1!t</strong> - Secure access to a high-stakes trading platform</li>
+    <li><strong>Y8@zL1!Xk3^G7#mQ</strong> - Confidential legal documents for a law firm</li>
+    <li><strong>4!Xk@8#zL3^G7$mQ</strong> - Classified military intelligence reports</li>
+</ul>
+
+</html>
