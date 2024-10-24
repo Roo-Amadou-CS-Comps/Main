@@ -1,9 +1,34 @@
 <?php
 session_start();
 
-// Simple hardcoded username and password for demonstration
-$valid_username = 'admin';
-$valid_password = 'salty';
+
+$filename = '/var/www/html/evenmoreimportant/data/hashes.txt';
+
+function validate_user($username, $password, $filename){
+// Open the file and read its contents
+    $fp = fopen($filename, 'r');
+    if (!$fp) {
+        die('Password file not found.');
+    }
+
+    // Read each line and check for the username and hashed password
+    while (($line = fgets($fp)) !== false) {
+        // Each line is in the format: username:hashedpassword
+        list($storedUser, $hashedPassword) = explode(':', trim($line), 2);
+
+        // Check if the username matches
+        if ($storedUser === $username) {
+            // Verify the entered password using crypt() and the stored hash
+            if (crypt($password, $hashedPassword) === $hashedPassword) {
+                fclose($fp);
+                return true; // Valid username and password
+            } else {
+                fclose($fp);
+                return false; // Invalid password
+            }
+          }
+	}
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Retrieve inputted username and password from form
@@ -11,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'];
 
     // Validate username and password
-    if ($username === $valid_username && $password === $valid_password) {
+    if (validate_user($username, $password, $filename)) {
         // Set session to mark the user as logged in
         $_SESSION['loggedin'] = true;
         $_SESSION['username'] = $username;
