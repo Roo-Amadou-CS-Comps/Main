@@ -9,8 +9,4 @@ SSL / HTTPS for site
 1. Look into https://httpd.apache.org/docs/2.4/programs/htpasswd.html
 2. Let's first start implementation in python, then try C
 3. A good word list: https://github.com/danielmiessler/SecLists
-4. Updated README.md of the tool
-5. Add reason for failure to basicauth
-6. Edit min-length and max-length to incorporate differenciating between username and passwords, same with uppercase lowercase and implement putting a number on the min or max required
-
 
