@@ -1,33 +1,34 @@
-
 # RASpray - Password Spraying Tool
 
 **Version**: 1.0.0
 
 ## Overview
 
-RASpray is a password spraying tool designed to perform basic authentication attempts against a target IP using a provided list of usernames and passwords. The tool is built with Python and can be deployed on Unix-based systems. Still under construction.
+RASpray is a password spraying tool designed to perform basic authentication attempts against a target IP using a provided list of usernames and passwords. The tool is built with Python and is compatible with Unix-based systems. **Still under construction.**
 
-Password spraying involves trying a list of common passwords against multiple user accounts to detect weak login credentials, while avoiding account lockouts that occur from multiple failed attempts on a single account.
+Password spraying involves trying a list of common passwords across multiple user accounts to detect weak login credentials while avoiding account lockouts from repeated failed attempts on a single account.
 
 ## Features
 
-- Traverses through website pages and attempts to detect password fields and Basic Authentication prompts.
-- Supports filtering of usernames and passwords based on user-defined criteria:
+- **Website Traversal**: Crawls through website pages and attempts to detect password fields and Basic Authentication prompts, with protections against infinite loops.
+- **Username & Password Filtering**: Supports customizable filtering of usernames and passwords based on:
   - Minimum and maximum length
-  - Requirement for uppercase letters, lowercase letters, numbers, or special characters
-- Avoids infinite loops during website traversal by keeping track of visited pages.
-- Provides a help command to guide users on how to use the tool.
-- Displays the tool version.
+  - Uppercase, lowercase, numeric, and special character requirements
+- **Password Spraying and Brute Forcing**: If initial password spraying attempts fail, the tool can perform brute-force attacks with custom delays to avoid detection.
+- **Help Command**: Displays usage instructions and available options.
+- **Version Display**: Outputs the tool version for easy tracking.
 
 ## Requirements
 
-- Python 3.x
-- `requests` library for handling HTTP requests.
-- `beautifulsoup4` for HTML parsing.
+- **Python 3.x**
+- **Python Libraries**:
+  - `requests` for handling HTTP requests.
+  - `beautifulsoup4` for HTML parsing.
+  - `colorama` for colored console output.
 
-Install the necessary libraries if you don’t have them already:
+Install the necessary libraries:
 ```bash
-pip install requests beautifulsoup4
+pip install requests beautifulsoup4 colorama
 ```
 
 ## Installation
@@ -46,39 +47,50 @@ pip install requests beautifulsoup4
 
 ## Usage
 
-RASpray can be run from the command line, passing in the required arguments for the usernames file, passwords file, target IP address, and optional username/password filtering criteria.
+RASpray can be run from the command line, passing in the required arguments for usernames and passwords files, target IP address, and optional filtering criteria.
 
-### Basic Usage:
+### Basic Usage
 ```bash
 raspray -u <usernames_file> -p <passwords_file> -i <ip_address>
 ```
 
-### Example:
+### Example
 ```bash
-raspray -u usernames.txt -p passwords.txt -i 192.168.1.1
+raspray -u usernames.txt -p passwords.txt -i 192.168.1.1 --username-min-len 4 --password-max-len 8
 ```
 
-### Options:
+### Options
 
-- `-u, --users`: Path to the file containing a list of usernames.
-- `-p, --pass`: Path to the file containing a list of passwords.
-- `-i, --ip`: The target IP address for the password spray.
-- `--min-len`: Specify the minimum length for usernames or passwords.
-- `--max-len`: Specify the maximum length for usernames or passwords.
-- `--uppercase`: Require at least one uppercase letter in usernames or passwords.
-- `--lowercase`: Require at least one lowercase letter in usernames or passwords.
-- `--numbers`: Require at least one number in usernames or passwords.
-- `--special-chars`: Require at least one special character (e.g., `!`, `@`, `#`).
-- `-h, --help`: Displays a help message with usage instructions.
-- `--version`: Displays the current version of the tool.
+- **Required Arguments**:
+  - `-u, --users`: Path to the file containing a list of usernames.
+  - `-p, --pass`: Path to the file containing a list of passwords.
+  - `-i, --ip`: Target IP address for the password spray.
 
-### Help Command:
-To display a list of available options, use:
+- **Filtering Options**:
+  - `--username-min-len`: Minimum length for usernames.
+  - `--username-max-len`: Maximum length for usernames.
+  - `--username-uppercase`: Require at least one uppercase letter in usernames.
+  - `--username-lowercase`: Require at least one lowercase letter in usernames.
+  - `--username-numbers`: Require at least one number in usernames.
+  - `--username-special-chars`: Require at least one special character in usernames.
+  - `--password-min-len`: Minimum length for passwords.
+  - `--password-max-len`: Maximum length for passwords.
+  - `--password-uppercase`: Require at least one uppercase letter in passwords.
+  - `--password-lowercase`: Require at least one lowercase letter in passwords.
+  - `--password-numbers`: Require at least one number in passwords.
+  - `--password-special-chars`: Require at least one special character in passwords.
+
+- **Other Options**:
+  - `-h, --help`: Display a help message with usage instructions.
+  - `--version`: Display the current version of the tool.
+
+### Help Command
+To view available options and usage instructions, use:
 ```bash
 raspray --help
 ```
 
-### Version:
+### Version
 To check the current version of the tool:
 ```bash
 raspray --version
@@ -90,16 +102,51 @@ raspray --version
 - **`usernames.txt`**: A sample file containing usernames (each on a new line).
 - **`passwords.txt`**: A sample file containing passwords (each on a new line).
 
+## Functionality Overview
+
+### Website Traversal
+
+The tool starts from the target IP and traverses website links, detecting pages with either form-based password fields or Basic Authentication prompts. This allows RASpray to locate potential entry points across multiple pages.
+
+### Password Spraying
+
+RASpray attempts to log in using combinations from specified usernames and passwords files. It supports custom filtering for these login credentials based on user-defined criteria for length, uppercase, lowercase, numeric, and special character requirements.
+
+### Brute Forcing (Optional)
+
+If password spraying attempts fail, RASpray can perform brute-forcing as an additional option. This mode generates all possible combinations of characters to match potential passwords. A configurable delay between attempts helps to prevent detection.
+
+### Time Delay
+
+A time delay (default: 5 seconds) is set between brute-force attempts to avoid detection by security mechanisms. This delay is customizable in the `perform_bruteforce` function.
+
+### Output
+
+- **Success Messages**: Displayed with successful login credentials.
+- **Failure Messages**: Lists pages and credentials for which login attempts failed.
+
+### Example Output
+```plaintext
+Starting RASpray...
+
+Trying username: admin and password: admin123
+Success! Username: admin, Password: admin123 on http://192.168.1.1/login
+
+--- Summary of Cracking Attempts ---
+Successfully cracked pages:
+Page: http://192.168.1.1/login, Username: admin, Password: admin123
+```
+
 ## Next Steps
 
-- Implement delays between attempts to avoid detection and lockout.
-- Extend support for other authentication methods (e.g., RDP, SSH).
-- Explore integration with machine learning to detect patterns in failed attempts.
-- Implement features Amadou and Roo have discussed, such as more complex traversal algorithms and additional protocols.
+- **Feature Improvements**: Additional protocols (e.g., RDP, SSH).
+- **Advanced Traversal**: Implementing complex traversal algorithms.
+- **Machine Learning**: Detecting patterns in failed login attempts.
+- **Extended Brute Force Controls**: More options to control brute-force attempts for better granularity.
 
 ## License
 
-This tool is provided for educational purposes and ethical hacking only. Ensure you have permission from the network or system owners before testing. Unauthorized use is illegal and punishable by law. This tool is currently under development for a senior thesis under Professor Jeff Ondich at Carleton College.
+This tool is provided for **educational purposes and ethical hacking only**. Make sure you have permission from the network or system owners before testing. Unauthorized use is illegal and punishable by law. This tool is currently under development for a senior thesis under **Professor Jeff Ondich** at **Carleton College**.
 
 ---
 

