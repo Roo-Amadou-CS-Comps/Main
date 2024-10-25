@@ -1,8 +1,7 @@
 ======== ROO ========
-PHP integration with htpass - getting around basicauth without perma-setting files
 Ping attack vs password/account attacks
 SSL / HTTPS for site
-
+Update README for setting up the website server
 
 ======== AMADOU ========
 
