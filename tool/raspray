@@ -3,6 +3,7 @@
 import sys
 import re
 import requests
+import psutil
 from bs4 import BeautifulSoup
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException, Timeout, ConnectionError
@@ -10,10 +11,37 @@ from urllib.parse import urljoin
 from colorama import Fore, Style, init
 import time
 import itertools
+from datetime import datetime
 
 # Define the tool's name and version
 TOOL_NAME = "RASpray"
 VERSION = "1.0.0"
+
+# Global variables for tracking experiment data
+total_attempts = 0
+successful_attempts = 0
+start_time = None
+cpu_usage_per_phase = []
+memory_usage_per_phase = []
+
+# Function to log CPU and memory usage for a specific phase
+def log_resource_usage(phase):
+    cpu = psutil.cpu_percent(interval=1)
+    memory = psutil.virtual_memory().percent
+    print(f"[{phase}] CPU: {cpu}%, Memory: {memory}%")
+    cpu_usage_per_phase.append((phase, cpu))
+    memory_usage_per_phase.append((phase, memory))
+
+# Function to start tracking time
+def start_timer():
+    global start_time
+    start_time = datetime.now()
+
+# Function to end tracking time and return elapsed time in seconds
+def end_timer():
+    global start_time
+    end_time = datetime.now()
+    return (end_time - start_time).total_seconds()
 
 # Function to display the RASPRAY banner
 def display_banner():
@@ -421,6 +449,7 @@ def perform_bruteforce(username_file, password_file, ip_address, criteria, sessi
 def password_spraying(ip_address, username_file, password_file, criteria):
     successful_cracks = []
     failed_cracks = []
+    global total_attempts, successful_attempts
 
     # Open the username and password files
     with open(username_file, 'r') as user_file:
@@ -452,10 +481,15 @@ def password_spraying(ip_address, username_file, password_file, criteria):
     # Traverse through the website and find pages with password fields or BasicAuth
     base_url = f'http://{ip_address}'
     pages_to_check = traverse_website(base_url, session)
+    
+    start_timer()
+    log_resource_usage("Initial Connection")
 
     for page in pages_to_check:
         time.sleep(5)
         full_url = urljoin(base_url, page)
+        log_resource_usage("Login Attempt")
+
 
         # Check if the page has a password field (form-based authentication)
         if is_password_requested_basic_password_field(full_url, session):
@@ -502,6 +536,15 @@ def password_spraying(ip_address, username_file, password_file, criteria):
                         print(f"Connection failed for {full_url}")
                     except RequestException as e:
                         print(f"An error occurred: {e}")
+    duration = end_timer()
+    print(f"{Fore.YELLOW}\n======== Experiment Summary ========{Style.RESET_ALL}")
+    print(f"Total Attempts: {total_attempts}")
+    print(f"Successful Attempts: {successful_attempts}")
+    print(f"Success Rate: {successful_attempts / total_attempts * 100:.2f}%")
+    print(f"Duration of Experiment: {duration} seconds")
+    print(f"{Fore.YELLOW}\n======== Resource Utilization ========{Style.RESET_ALL}")
+    for phase, cpu in cpu_usage_per_phase:
+        print(f"{phase} - CPU: {cpu}%, Memory: {memory_usage_per_phase[phase]}%")
     # After exhausting all combinations, ask if the user wants to proceed with bruteforce
     if ask_for_bruteforce():
         perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check)
