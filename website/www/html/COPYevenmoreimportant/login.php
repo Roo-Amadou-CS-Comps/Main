@@ -3,19 +3,39 @@ session_start();
 
 $filename = '/var/www/html/evenmoreimportant/data/hashes.txt';
 
-function validate_user($username, $password) {
-    // Predefined usernames and passwords
-    $credentials = [
-        'admin' => 'password',
-        'Jeff' => 'Dancer',
-        'Olga' => 'DietDrPepper',
-        'Minnesotan' => 'Carb0n7',
-        'BringItOn' => 'SecurityUsIO!1',
-        'MorrisDancer37' => 'SdA1&XPUU'
-    ];
+function validate_user($username, $password, $filename) {
+    // Open the file and read its contents
+    $fp = fopen($filename, 'r');
+    if (!$fp) {
+        die('Password file not found.');
+    }
 
-    // Check if the username exists and if the password matches
-    return isset($credentials[$username]) && $credentials[$username] === $password;
+    // Read each line and check for the username and hashed password
+    while (($line = fgets($fp)) !== false) {
+        // Each line is in the format: username:hashedpassword
+        list($storedUser, $hashedPassword) = explode(':', trim($line), 2);
+
+        // Check if the username matches
+        if ($storedUser === $username) {
+            // Verify the entered password using crypt() and the stored hash
+            $generatedHash = crypt($password, $hashedPassword);
+            
+            // Debugging output
+            echo "Generated Hash: $generatedHash<br>";
+            echo "Stored Hash: $hashedPassword<br>";
+
+            if ($generatedHash === $hashedPassword) {
+                fclose($fp);
+                return true; // Valid username and password
+            } else {
+                fclose($fp);
+                return false; // Invalid password
+            }
+        }
+    }
+
+    fclose($fp);
+    return false; // Username not found
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
