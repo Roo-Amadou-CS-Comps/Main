@@ -1,10 +1,12 @@
 <?php
 session_start();
 
+require_once '/var/www/html/evenmoreimportant/vendor/autoload.php';
+use WhiteHat101\Crypt\APR1_MD5;
+
 $filename = '/var/www/html/evenmoreimportant/data/hashes.txt';
 
 function validate_user($username, $password, $filename) {
-    // Open the file and read its contents
     $fp = fopen($filename, 'r');
     if (!$fp) {
         die('Password file not found.');
@@ -15,31 +17,33 @@ function validate_user($username, $password, $filename) {
         // Each line is in the format: username:hashedpassword
         list($storedUser, $hashedPassword) = explode(':', trim($line), 2);
 
+        // Debugging output for username and hash
+        echo "Checking username: $storedUser with hash: $hashedPassword<br>";
+
         // Check if the username matches
         if ($storedUser === $username) {
-            // Verify the entered password using crypt() and the stored hash
-            $generatedHash = crypt($password, $hashedPassword);
-            
-            // Debugging output
-            echo "Generated Hash: $generatedHash<br>";
-            echo "Stored Hash: $hashedPassword<br>";
+            // Debugging output for password check
+            echo "Username matched. Checking password...<br>";
 
-            if ($generatedHash === $hashedPassword) {
+            // Verify the entered password using APR1_MD5::check() and the stored hash
+            if (APR1_MD5::check($password, $hashedPassword)) {
                 fclose($fp);
+                echo "Password matched.<br>"; // Debugging output for success
                 return true; // Valid username and password
             } else {
+                echo "Password did not match.<br>"; // Debugging output for failure
                 fclose($fp);
                 return false; // Invalid password
             }
         }
     }
 
+    echo "Username not found.<br>"; // Debugging output for username not found
     fclose($fp);
     return false; // Username not found
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Retrieve inputted username and password from form
     $username = $_POST['username'];
     $password = $_POST['password'];
 
