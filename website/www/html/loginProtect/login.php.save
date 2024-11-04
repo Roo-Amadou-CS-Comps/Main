@@ -6,6 +6,17 @@ use WhiteHat101\Crypt\APR1_MD5;
 
 $filename = '/var/www/html/evenmoreimportant/data/hashes.txt';
 
+function add_log($username){
+	$logTitle = $username . "_log";
+	$logUnserialized = $_SESSION($logTitle) ?? array(); 
+	array_push($logUnserialized, time())
+
+}
+
+function check_login_logs($username){
+
+}
+
 function validate_user($username, $password, $filename) {
     $fp = fopen($filename, 'r');
     if (!$fp) {
@@ -19,10 +30,11 @@ function validate_user($username, $password, $filename) {
 
         // Check if the username matches
         if ($storedUser === $username) {
-            // Debugging output for password check
-            echo "Username matched. Checking password...<br>";
-
-            // Verify the entered password using APR1_MD5::check() and the stored hash
+            $attempts  =  $_SERVER[username] ?? 0;
+	    $attempts++
+	   
+	if ($attempts > 10)
+	// Verify the entered password using APR1_MD5::check() and the stored hash
             if (APR1_MD5::check($password, $hashedPassword)) {
                 fclose($fp);
                 echo "Password matched.<br>"; // Debugging output for success
@@ -30,7 +42,8 @@ function validate_user($username, $password, $filename) {
             } else {
                 echo "Password did not match.<br>"; // Debugging output for failure
                 fclose($fp);
-                return false; // Invalid password
+        	apache_serenv(username, $attempts);   
+	     return false; // Invalid password
             }
         }
     }
