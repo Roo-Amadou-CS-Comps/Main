@@ -13,7 +13,6 @@ from colorama import Fore, Style, init
 import time
 import itertools
 from datetime import datetime
-
 from threading import Thread
 import urllib3
 
@@ -186,8 +185,6 @@ def is_password_requested_basic_auth(url, session):
         return False
     
 
-    
-    
 def is_password_requested_basic_password_field(url, session):
     """
     Checks if the given page contains an input field for a password.
