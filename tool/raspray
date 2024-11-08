@@ -30,15 +30,11 @@ memory_usage_per_phase = []
 process = psutil.Process(os.getpid())
 
 # Function to log memory usage
-def log_resource_usage(phase):
+def log_resource_usage(phase, page):
     memory = process.memory_percent()  # Percentage of RAM used by the process
-    thread_count = process.num_threads()  # Active thread count for the process
-
-    print(f"[{phase}] Memory: {memory}%, Threads: {thread_count}")
-
-
+    print(f"[{phase}] Page: {page} - Memory: {memory}%")
     memory_usage_per_phase.append((phase, memory))
-    thread_count  # Keeps track of active threads at each phase
+
 
 
 # Function to start tracking time
@@ -179,7 +175,7 @@ def is_password_requested_basic_auth(url, session):
             print(f"{Fore.RED}Access forbidden. Reason: {response.reason}")
         
         else:
-            print(f"No BasicAuth required on {url}")
+            print(f"{Fore.WHITE}No BasicAuth required on {url}")
             return False
         
     except RequestException as e:
@@ -212,7 +208,7 @@ def is_password_requested_basic_password_field(url, session):
             print(f"{Fore.GREEN}Password field found on {url}")
             return True
         else:
-            print(f"No password field on {url}")
+            print(f"{Fore.WHITE}No password field on {url}")
             return False
 
     except RequestException as e:
@@ -534,14 +530,15 @@ def password_spraying(ip_address, username_file, password_file, criteria):
 
     
     start_timer()
-    log_resource_usage("Initial Connection")
+    log_resource_usage("Initial Connection","")
     total_pages_field = 0 # stores the total number of pages that have any authentication fields
     for page in pages_to_check:
         #time.sleep(2)
         
         full_url = urljoin(base_url, page)
         credentials_found = False  # Flag to stop further attempts once successful
-        log_resource_usage("Login Attempt")
+        print("This is the full URL", full_url)
+        log_resource_usage("Login at page", full_url)
 
 
         # Check if the page has a password field (form-based authentication)
@@ -549,6 +546,7 @@ def password_spraying(ip_address, username_file, password_file, criteria):
             total_pages_field +=1
             for password in passwords:
                 for username in usernames:
+                    log_resource_usage("Attempting a combination","")
                     try:
                         print(f"{Fore.WHITE}Trying username: {username} and password: {password}")
                         credentials = attempt_login_with_form(full_url, session, username, password)
