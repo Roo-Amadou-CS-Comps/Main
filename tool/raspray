@@ -460,7 +460,6 @@ def perform_bruteforce(username_file, password_file, ip_address, criteria, sessi
                                 credentials = (username, bruteforce_password)
                             else:
                                 credentials = None
-                            #time.sleep(delay)
                         
                         # If successful, print and return
                         if credentials:
@@ -557,9 +556,7 @@ def password_spraying(ip_address, username_file, password_file, criteria):
     start_timer()
     log_resource_usage("Initial Connection","")
     total_pages_field = 0 # stores the total number of pages that have any authentication fields
-    for page in pages_to_check:
-        #time.sleep(2)
-        
+    for page in pages_to_check:        
         full_url = urljoin(base_url, page)
         credentials_found = False  # Flag to stop further attempts once successful
         log_resource_usage(f"{Fore.WHITE}Login at page", full_url)
@@ -586,6 +583,7 @@ def password_spraying(ip_address, username_file, password_file, criteria):
                         print(f"Connection failed for {full_url}")
                     except RequestException as e:
                         print(f"An error occurred: {e}")
+                #time.sleep(2)
 
         if is_password_requested_basic_auth(full_url, session):
             total_pages_field +=1
@@ -622,10 +620,10 @@ def password_spraying(ip_address, username_file, password_file, criteria):
         perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check)
 
 
-    if failed_cracks:
-        print(f"{Fore.RED}Failed pages that required a password:")
-        for page, user, pwd in failed_cracks:
-            print(f"{Fore.WHITE}Page: {page}, Username: {user}, Password: {pwd}")
+    #if failed_cracks:
+    #    print(f"{Fore.RED}Failed pages that required a password:")
+    #    for page, user, pwd in failed_cracks:
+    #        print(f"{Fore.WHITE}Page: {page}, Username: {user}, Password: {pwd}")
     else:
         print(f"{Fore.GREEN}No failed password cracking attempts.")
     
