@@ -29,5 +29,6 @@ def profile_memory_usage(num):
 # Execute the memory profiling and runtime measurement
 if __name__ == "__main__":
     profile_memory_usage(0)
+    time.sleep(10)
     profile_memory_usage(1)
     
