@@ -35,7 +35,7 @@ process = psutil.Process(os.getpid())
 # Function to log memory usage
 def log_resource_usage(phase, page):
     memory = process.memory_percent()  # Percentage of RAM used by the process
-    print(f"[{phase}] Page: {page} - Memory: {memory}%")
+    #print(f"[{phase}] Page: {page} - Memory: {memory}%")
     memory_usage_per_phase.append((phase, memory))
 
 
@@ -540,7 +540,7 @@ def password_field_spray(full_url, password, username, session, successful_crack
         else:
             failed_cracks.append((full_url, username, password))
     except (Timeout, ConnectionError):
-        time.delay(1)
+        time.delay(0.5)
         print(f"Connection failed for {full_url}")
     except RequestException as e:
         print(f"An error occurred: {e}")
@@ -621,12 +621,7 @@ def password_spraying(ip_address, username_file, password_file, criteria):
         print("This is the full URL", full_url)
         log_resource_usage("Login at page", full_url)
         
-        tsub1 = Thread(target=single_spray, args=(full_url, passwords, usernames, session, successful_cracks, failed_cracks, total_attempts, successful_attempts, total_pages_field))
-        t.append(tsub1)
-        tsub1.start()
-    
-    for thread in t:
-        thread.join()
+        single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks, total_attempts, successful_attempts, total_pages_field)
 
     duration = end_timer()  
 
