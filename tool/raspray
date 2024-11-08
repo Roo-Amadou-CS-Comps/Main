@@ -450,17 +450,8 @@ def perform_bruteforce(username_file, password_file, ip_address, criteria, sessi
                             if credentials:
                                 print(f"{Fore.GREEN}Success! Username: {credentials[0]}, Password: {credentials[1]} on {full_url}")
                                 return  # Stop after the first successful brute-force
-        except requests.exceptions.ConnectionError:     
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, urllib3.exceptions.ProtocolError, ConnectionResetError) as e:     
             print("Connection Error, waiting for 1 second")
-            time.sleep(1)
-        except ConnectionResetError:
-            print("Connection Reset Error, waiting for 1 second")
-            time.sleep(1)
-        except requests.exceptions.Timeout:
-            print("Timeout Error, waiting for 1 second")
-            time.sleep(1)
-        except urllib3.exceptions.ProtocolError:
-            print("Protocol Error, waiting for 1 second")
             time.sleep(1)
         except requests.exceptions.RequestException as e:
             print(f"An error occurred: {e}")
