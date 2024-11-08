@@ -28,6 +28,14 @@ def profile_memory_usage(num):
 
 # Execute the memory profiling and runtime measurement
 if __name__ == "__main__":
+    print("Running hydra command...")
     profile_memory_usage(0)
+
+    print("\n")
+    print("Waiting for 10 seconds before running the next command to let server cool down...")
+    time.sleep(10)
+
+    print("\n") 
+    print("Running raspray command...")
     profile_memory_usage(1)
     
