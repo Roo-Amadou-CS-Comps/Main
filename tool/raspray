@@ -604,7 +604,7 @@ def password_spraying(ip_address, username_file, password_file, criteria):
     pages_to_check = list(set(pages_to_check))  # Remove duplicates
 
     
-    #start_timer()
+    start_timer()
     log_resource_usage("Initial Connection","")
     t = []
     total_pages_field = 0 # stores the total number of pages that have any authentication fields
