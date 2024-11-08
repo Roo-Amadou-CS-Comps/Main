@@ -2,3 +2,4 @@ requests
 psutil
 beautifulsoup4
 colorama
+urllib3

