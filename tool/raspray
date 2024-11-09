@@ -15,6 +15,7 @@ import itertools
 from datetime import datetime
 from threading import Thread
 import urllib3
+import progressbar
 
 # Define the tool's name and version
 TOOL_NAME = "RASpray"
@@ -545,7 +546,7 @@ def single_spray(full_url, passwords, usernames, session, successful_cracks, fai
                 for username in usernames:
                     count +=1
                     bar.update(count)
-                    tsub = Thread(target=password_field_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks, total_attempts, successful_attempts))
+                    tsub = Thread(target=password_field_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks))
                     threads.append(tsub)    
                 for thread in threads:
                     thread.start()
@@ -565,7 +566,7 @@ def single_spray(full_url, passwords, usernames, session, successful_cracks, fai
                 for username in usernames:
                     count +=1
                     bar.update(count)
-                    tsub = Thread(target=basic_auth_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks, total_attempts, successful_attempts))
+                    tsub = Thread(target=basic_auth_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks))
                     threads.append(tsub)    
                 for thread in threads:
                     thread.start()
@@ -622,7 +623,7 @@ def password_spraying(ip_address, username_file, password_file, criteria):
         log_resource_usage("Login at page", full_url)
         
         # Check if the page has authentication fields and update the total pages checked
-        single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks)
+        single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks, total_attempts, successful_attempts, total_pages_field)
 
     duration = end_timer()  
 
