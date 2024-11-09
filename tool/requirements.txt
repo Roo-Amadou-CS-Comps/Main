@@ -3,3 +3,4 @@ psutil
 beautifulsoup4
 colorama
 urllib3
+progressbar
