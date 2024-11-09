@@ -4,7 +4,7 @@ from memory_profiler import memory_usage
 def run_program(type):
     commands = [
         ["hydra", "-L", "usernames.txt", "-P", "passwords.txt", "18.188.93.218", "http-get", "/important/SECRETCODES.html"],
-        ["./raspray", "-u", "usernames.txt", "-p", "passwords.txt", "-i", "18.188.93.218"]
+        ["./raspray_test", "-u", "usernames.txt", "-p", "passwords.txt", "-i", "18.188.93.218"]
     ]
     # Measure runtime
     start_time = time.time()

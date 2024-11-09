@@ -625,11 +625,12 @@ def password_spraying(ip_address, username_file, password_file, criteria):
     if ask_for_bruteforce():
         perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check)
     """
-  
+    '''
     if failed_cracks:
         print(f"{Fore.RED}Failed pages that required a password:")
         for page, user, pwd in failed_cracks:
             print(f"{Fore.WHITE}Page: {page}, Username: {user}, Password: {pwd}")
+    '''
 
     if failed_cracks: ### if uncommenting the code above when debugging, make sure to comment this if statement (not the else)
         pass
