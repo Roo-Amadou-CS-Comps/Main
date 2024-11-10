@@ -1,6 +1,7 @@
 import time
 import subprocess
 from memory_profiler import memory_usage
+
 def run_program(type, output_runtime):
     commands = [
         ["hydra", "-L", "usernames.txt", "-P", "passwords.txt", "18.188.93.218", "http-get", "/important/SECRETCODES.html"],
@@ -50,7 +51,7 @@ if __name__ == "__main__":
     hydratimesOutliers = []
 
     for i in range(1, totalRuns+1):
-        print(f"\nRound {i}:\n\nRunning hydra command...")
+        print(f"\n\nRound {i}:\n\nRunning hydra command...")
         runtimeHYDRA, memHYDRA = profile_memory_usage(0)
         hydratimes.append(runtimeHYDRA)
         tottimeHYDRA += runtimeHYDRA
