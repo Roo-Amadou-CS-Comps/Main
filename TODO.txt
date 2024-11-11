@@ -1,8 +1,0 @@
-======== ROO ========
-Ping attack vs password/account attacks
-SSL / HTTPS for site
-Update README for setting up the website server
-
-======== AMADOU ========
-
-1. Don't forget to handle the timing stuff (comment / uncomment where necessary)
