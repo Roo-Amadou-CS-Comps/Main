@@ -1,7 +1,7 @@
 # Implementing, Analyzing, and Defending Against Password Spraying Attacks on HTTP-based Authentication Systems
 
 
-## READMEs.mp
+## READMEs
 
 If interested about the specifics of the **server** or **RASpray** setup, please refer to the specific READMe files in the **website** and **tool** folders repository, repectively.
 
