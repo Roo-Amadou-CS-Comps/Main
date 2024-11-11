@@ -52,7 +52,7 @@ To install RASpray, you need Python 3 and the required packages. Follow the step
 To execute RASpray, use the following command structure:
 
 ```bash
-python3 raspray.py [options]
+python3 raspray [options]
 ```
 
 ## Usage
