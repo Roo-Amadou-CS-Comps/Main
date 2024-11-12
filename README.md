@@ -3,7 +3,7 @@
 
 ## READMEs
 
-If interested about the specifics of the **server** or **RASpray** setup, please refer to the specific READMe files in the **website** and **tool** folders repository, repectively.
+If interested about the specifics of the **server** or **RASpray** setup, please refer to the specific READMe files in the **website** and **tool** folders in the repository, repectively.
 
 ## Poster
 
