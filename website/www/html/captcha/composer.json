@@ -1,0 +1,6 @@
+{
+    "require": {
+        "whitehat101/apr1-md5": "^1.0",
+        "google/cloud-recaptcha-enterprise": "^1.15"
+    }
+}
