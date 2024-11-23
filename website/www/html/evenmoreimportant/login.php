@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-require_once '/var/www/html/evenmoreimportant/vendor/autoload.php';
+require_once '/var/www/html/loginprotect/vendor/autoload.php';
 use WhiteHat101\Crypt\APR1_MD5;
 
 $filename = '/var/www/html/evenmoreimportant/data/hashes.txt';
