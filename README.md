@@ -6,6 +6,7 @@ For Carleton College CS Comps, F24
 2. Run `runme.sh`. This will automatically create and run the Docker container. Expect this process to take at least 45 seconds - the server has a lot of prerequisite packages to download, install, and configure.
     * After running the server, you can re-run the container creation by running `docker run -it -p 80:80 target_server /bin/bash` or by finding the container's ID and re-running it.
 3. You'll be dropped into a bash shell after the script is done running. **Note: exiting the shell environment will also stop the container.** To interact with the server while it is running, open another shell terminal. The server default accessible from your localhost at port 80.
+4. If you are unable to access the webpages after startup, run `/start.sh`, which will restart both Apache and nginx. 
 
 ## License
 
