@@ -1,4 +1,4 @@
-# THIS DOCKERFILE IS FOR THE WEBSITE AND APACHE SERVER.
+# THIS DOCKERFILE IS FOR THE WEBSITE AND APACHE SERVER. 
 # Base image
 FROM debian:latest
 
@@ -43,16 +43,18 @@ RUN wget -O composer-setup.php https://getcomposer.org/installer && \
     php composer-setup.php --install-dir=/usr/local/bin --filename=composer && \
     rm composer-setup.php
 
-# Set working directories for both loginProtect and evenmoreimportant
+# Set working directory
 WORKDIR /var/www/html/loginProtect
-RUN composer require whitehat101/apr1-md5
 
-WORKDIR /var/www/html/evenmoreimportant
-RUN composer require whitehat101/apr1-md5
+# Ensure PHP dependencies are installed
+RUN composer install
 
-# Set permissions for both vendor directories
+# Ensure vendor/autoload.php exists and whitehat101/apr1-md5 is installed
+RUN if [ ! -f vendor/autoload.php ]; then composer dump-autoload; fi && \
+    composer require whitehat101/apr1-md5
+
+# Set permissions for the vendor directory
 RUN chmod -R 755 /var/www/html/loginProtect/vendor
-RUN chmod -R 755 /var/www/html/evenmoreimportant/vendor
 
 # Enable Apache and Nginx ports
 EXPOSE 80
