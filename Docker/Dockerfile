@@ -19,8 +19,7 @@ RUN git clone https://github.com/Roo-Amadou-CS-Comps/Main.git /app
 RUN mkdir -p /etc/apache2
 
 # Copy Apache configuration and website files
-RUN cp -r /app/website/etc/apache2/* /etc/apache2/ && \
-    cp -r /app/website/etc/nginx/* /etc/nginx/ && \
+RUN cp -r /app/website/etc/* /etc/ && \
     cp -r /app/website/www/html/* /var/www/html/
 
 # Enable Apache and Nginx ports
