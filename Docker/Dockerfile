@@ -4,23 +4,7 @@ FROM debian:latest
 
 # Install required packages
 RUN apt-get update && \
-    apt-get install -y \
-    git \
-    apache2 \
-    libapache2-mod-evasive \
-    php8.2 \
-    libapache2-mod-php8.2 \
-    php-cli \
-    php-mysql \
-    php-curl \
-    php-mbstring \
-    wget \
-    systemd \
-    nginx \
-    lynx \
-    nano \
-    net-tools \
-    unzip && \
+    apt-get install -y git apache2 libapache2-mod-evasive php8.2 libapache2-mod-php8.2 php-cli wget systemd nginx lynx nano net-tools && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -38,29 +22,19 @@ RUN mkdir -p /etc/apache2
 RUN cp -r /app/website/etc/* /etc/ && \
     cp -r /app/website/www/html/* /var/www/html/
 
-# Install Composer globally
-RUN wget -O composer-setup.php https://getcomposer.org/installer && \
-    php composer-setup.php --install-dir=/usr/local/bin --filename=composer && \
-    rm composer-setup.php
-
-# Set working directory
-WORKDIR /var/www/html/loginProtect
-
-# Ensure PHP dependencies are installed
-RUN composer install
-
-# Ensure vendor/autoload.php exists and whitehat101/apr1-md5 is installed
-RUN if [ ! -f vendor/autoload.php ]; then composer dump-autoload; fi && \
-    composer require whitehat101/apr1-md5
-
-# Set permissions for the vendor directory
-RUN chmod -R 755 /var/www/html/loginProtect/vendor
-
 # Enable Apache and Nginx ports
 EXPOSE 80
 EXPOSE 8080
 
-# Copy the startup script
+# Install PHP and Composer
+RUN wget -O composer-setup.php https://getcomposer.org/installer && \
+    php composer-setup.php && \
+    mv composer.phar /usr/local/bin/composer && \
+    php -r "unlink('composer-setup.php');" && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Add a script to start both Nginx and Apache
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
