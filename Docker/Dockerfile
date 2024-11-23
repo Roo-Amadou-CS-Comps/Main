@@ -29,7 +29,7 @@ RUN sed -i 's/listen 80 default_server;/listen 80;/' /etc/nginx/sites-available/
     sed -i 's|location / {|location / {\n\tproxy_pass http://localhost:8080;\n\tproxy_set_header Host $host;\n\tproxy_set_header X-Real-IP $remote_addr;\n|' /etc/nginx/sites-available/default
 
 # Clone repository from GitHub
-RUN git clone --branch DockerServerVersion --single-branch https://github.com/Roo-Amadou-CS-Comps/Main.git
+RUN git clone --branch DockerServerVersion --single-branch https://github.com/Roo-Amadou-CS-Comps/Main.git /app
 
 
 # Ensure the /etc/apache2 directory exists before copying
@@ -46,14 +46,13 @@ RUN wget -O composer-setup.php https://getcomposer.org/installer && \
 
 # Set working directories for both loginProtect and evenmoreimportant
 WORKDIR /var/www/html/loginProtect
-RUN composer require whitehat101/apr1-md5
+RUN composer require whitehat101/apr1-md5 && \
+    chmod -R 755 vendor
 
 WORKDIR /var/www/html/evenmoreimportant
-RUN composer require whitehat101/apr1-md5
+RUN composer require whitehat101/apr1-md5 && \
+    chmod -R 755 vendor
 
-# Set permissions for both vendor directories
-RUN chmod -R 755 /var/www/html/loginProtect/vendor
-RUN chmod -R 755 /var/www/html/evenmoreimportant/vendor
 
 # Enable Apache and Nginx ports
 EXPOSE 80
@@ -66,5 +65,5 @@ WORKDIR /
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-# Command to start both services
-CMD ["/start.sh"]
+# Automatically execute the startup script
+ENTRYPOINT ["/start.sh"]

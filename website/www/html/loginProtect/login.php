@@ -6,7 +6,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 
-require_once '/var/www/html/loginprotect/vendor/autoload.php';
+require_once '/var/www/html/evenmoreimportant/vendor/autoload.php';
 use WhiteHat101\Crypt\APR1_MD5;
 
 $filename = '/var/www/html/evenmoreimportant/data/hashes.txt';
