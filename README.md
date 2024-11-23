@@ -1,25 +1,15 @@
-# Implementing, Analyzing, and Defending Against Password Spraying Attacks on HTTP-based Authentication Systems
+# Docker Server for RASpray Attacks
+## For Carleton College CS Comps, F24
 
-
-## READMEs
-
-If interested about the specifics of the **server** or **RASpray** setup, please refer to the specific READMe files in the **website** and **tool** folders in the repository, repectively.
-
-## Poster
-
-A poster-style presentation of this project is located in the **poster** folder of this repository.
-
-## Project Description
-
-A detailed description of this project is located in the **Project Description** folder of this repository, which also contains a video demonstration of the tool and its interaction with our server.
-
-## Analysis of our tool
-
-TODO: ROO add stuff here
+## How to run Docker container
+1. Download the "Docker" folder
+2. Run `runme.sh`. This will automatically create and run the Docker container. Expect this process to take at least 45 seconds - the server has a lot of prerequisite packages to download, install, and configure.
+    * After running the server, you can re-run the container creation by running `docker run -it -p 80:80 target_server /bin/bash` or by finding the container's ID and re-running it.
+3. You'll be dropped into a bash shell after the script is done running. **Note: exiting the shell environment will also stop the container.** To interact with the server while it is running, open another shell terminal. The server default accessible from your localhost at port 80.
 
 ## License
 
-This repository and its contents are provided for **educational purposes and ethical hacking only**. Make sure you have permission from the network or system owners before testing. Unauthorized use is illegal and punishable by law. This project was developed for a senior thesis under **Professor Jeff Ondich** at **Carleton College**. Fall 2024.
+The server-specific code, configuration, and other elements fall under the GNU GPL license, unless specified otherwise. Apache is under the Apache License, and nginx is under the FreeBSD License. 
 
 ## Contributors
 
