@@ -1,0 +1,13 @@
+<html>
+<h1> Amadou and Roo's CS Comps Website </h1>
+<h2>There's some information here.</h2>
+
+Here's some links to other pages on the website:
+<ul></ul>
+  <li><a href="about.html">About</a></li>
+  <li><a href="contact.html">Contact</a></li>
+  <li><a href="important/SECRETCODES.html"> Important Data (Basicauth)</a></li>
+  <li><a href="evenmoreimportant/login.php">EVEN MORE important data (PHP Form)</a></li>
+  <li><a href="loginProtect/login.php">EVEN EVEN MORE important data (PHP Form with user lockouts)</a></li>
+  <li><a href="captcha/login.php">EVEN EVEN EVEN MORE important data (PHP Form with user lockouts AND Google reCAPTCHA)</a></li>
+</html>
