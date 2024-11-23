@@ -1,5 +1,5 @@
 # Docker Server for RASpray Attacks
-## For Carleton College CS Comps, F24
+For Carleton College CS Comps, F24
 
 ## How to run Docker container
 1. Download the "Docker" folder
