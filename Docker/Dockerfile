@@ -58,6 +58,9 @@ RUN chmod -R 755 /var/www/html/evenmoreimportant/vendor
 EXPOSE 80
 EXPOSE 8080
 
+# Default working directory
+WORKDIR /
+
 # Copy the startup script
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
