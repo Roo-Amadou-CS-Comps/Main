@@ -21,6 +21,8 @@ TODO: ROO add stuff here
 
 This repository and its contents are provided for **educational purposes and ethical hacking only**. Make sure you have permission from the network or system owners before testing. Unauthorized use is illegal and punishable by law. This project was developed for a senior thesis under **Professor Jeff Ondich** at **Carleton College**. Fall 2024.
 
+The server-specific code, configuration, and other elements fall under the GNU GPL license, unless specified otherwise. Apache is under the Apache License, and nginx is under the FreeBSD License.
+
 ## Contributors
 
 - **Amadou Touré** '25, Carleton College. [tourea@carleton.edu](mailto:tourea@carleton.edu)
