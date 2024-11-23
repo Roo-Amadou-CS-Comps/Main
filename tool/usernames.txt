@@ -1,9 +1,0 @@
-admin
-info
-2000
-michael
-NULL
-john
-david
-robert
-chris
