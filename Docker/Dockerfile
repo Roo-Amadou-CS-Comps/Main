@@ -29,7 +29,8 @@ RUN sed -i 's/listen 80 default_server;/listen 80;/' /etc/nginx/sites-available/
     sed -i 's|location / {|location / {\n\tproxy_pass http://localhost:8080;\n\tproxy_set_header Host $host;\n\tproxy_set_header X-Real-IP $remote_addr;\n|' /etc/nginx/sites-available/default
 
 # Clone repository from GitHub
-RUN git clone https://github.com/Roo-Amadou-CS-Comps/Main.git /app
+RUN git clone --branch DockerServerVersion --single-branch https://github.com/Roo-Amadou-CS-Comps/Main.git
+
 
 # Ensure the /etc/apache2 directory exists before copying
 RUN mkdir -p /etc/apache2
