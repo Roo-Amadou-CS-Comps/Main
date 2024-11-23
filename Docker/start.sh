@@ -34,24 +34,11 @@ else
     echo "Dependencies already installed for /var/www/html/evenmoreimportant."
 fi
 
-# Return to root
-cd /
-
 # Set permissions for both directories
 echo "Setting permissions for vendor directories..."
 chmod -R 755 /var/www/html/loginProtect/vendor
 chmod -R 755 /var/www/html/evenmoreimportant/vendor
 
-# Keep the container running or drop into an interactive shell
-if [ "$1" != "interactive" ]; then
-    echo "Startup complete."
-    # Start log tailing in the background
-    tail -f /var/log/apache2/access.log /var/log/nginx/access.log &
-    # Wait indefinitely to keep the container running
-    while true; do
-        sleep 3600
-    done
-else
-    echo "Dropping into an interactive shell..."
-    exec /bin/bash
-fi
+# Keep the container running
+echo "Startup complete. Tailing logs..."
+tail -f /var/log/apache2/access.log /var/log/nginx/access.log
