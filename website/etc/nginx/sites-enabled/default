@@ -1,8 +1,1 @@
-
-server {
-	listen 80;
-
-	server_name http://18.188.93.218;
-
-
-}
+/etc/nginx/sites-available/default
