@@ -45,6 +45,7 @@ To install RASpray, you need Python 3 and the required packages. Follow the step
    psutil
    colorama
    urllib3
+   progressbar
    ```
 
 ## Execution
