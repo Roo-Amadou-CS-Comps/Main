@@ -15,7 +15,16 @@ A detailed description of this project is located in the **Project Description**
 
 ## Analysis of our tool
 
-TODO: ROO add stuff here
+<div style="background-color: white; padding: 10px; display: inline-block;">
+    <img width="500" alt="image" src="https://github.com/user-attachments/assets/3b4ee648-9914-40ff-93b2-5270995eaeee">    <img width="500" alt="image" src="https://github.com/user-attachments/assets/cb9816f4-a533-4557-8228-d439a7802a96">
+</div>
+
+
+
+We primarily tested on BasicAuth. This is specifically because Hydra is not easy to set on any other type of login, and BasicAuth is fairly consistently performing on the server-side, whereas PHP can sometimes be a little inconsistent. These two tools are also doing slightly different things, which may skew the data. Hydra is taking in the direct url to the page that is protected by BasicAuth, while RASpray is traversing the website, finding the BasicAuth-protected page and spraying it.  
+
+We can see in the diagrams that our tool is fairly consistent in memory usage between Hydra and RASpray. However, the data looks weirder when we look at overall runtime. There’s two peaks in runtime with our tool and only one for Hydra. We think this is because our tool is running too fast. Hydra is better able to pace itself and fine-tune its delays when it detects that its requests are overwhelming the target server, while RASpray is unable to be as fine-grained, waiting a base amount of 1 second before resuming its spray. 
+
 
 ## License
 
