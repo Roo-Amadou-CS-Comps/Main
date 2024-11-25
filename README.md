@@ -3,7 +3,7 @@
 
 ## READMEs
 
-If interested about the specifics of the **server** or **RASpray** setup, please refer to the specific READMe files in the **website** and **tool** folders in the repository, repectively. To run a 
+If interested about the specifics of the **server** or **RASpray** setup, please refer to the specific READMe files in the **website** and **tool** folders in the repository, repectively.
 
 **We have set up a dockerized verison of the server we worked on over the term, available in the branch `DockerServerVersion`. Instructions and a packaged release exist in that branch.**
 
