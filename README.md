@@ -3,15 +3,15 @@
 
 ## READMEs
 
-If interested about the specifics of the **server** or **RASpray** setup, please refer to the specific READMe files in the **website** and **tool** folders in the repository, repectively.
+If interested about the specifics of the **server** or **RASpray** setup, please refer to the specific READMe files in the **website** and **tool** folders in the repository, repectively. To run a 
 
-## Poster
+**We have set up a dockerized verison of the server we worked on over the term, available in the branch `DockerServerVersion`. Instructions and a packaged release exist in that branch.**
 
-A poster-style presentation of this project is located in the **poster** folder of this repository.
-
-## Project Description
+## Project Description & Poster
 
 A detailed description of this project is located in the **Project Description** folder of this repository, which also contains a video demonstration of the tool and its interaction with our server.
+
+A poster-style presentation of this project is also located in our **Project Description** folder.
 
 ## Analysis of our tool
    <img width="500" alt="image" src="https://github.com/user-attachments/assets/3b4ee648-9914-40ff-93b2-5270995eaeee">    <img width="500" alt="image" src="https://github.com/user-attachments/assets/cb9816f4-a533-4557-8228-d439a7802a96">
